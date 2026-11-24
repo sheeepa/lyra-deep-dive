@@ -45,7 +45,7 @@
 
 ### 标签栈（TagStack）
 
-`FGameplayTagStackContainer` 是 Lyra 的一个小工具（`Source/LyraGame/System/GameplayTagStack.h`）：一张 “GameplayTag → 整数” 的表，内部是一个 FastArray，所以只复制变化的项，并且只能在服务器上增减。Lyra 拿它存“弹匣里还有几发”“备弹有几发”这类**会变化的整数状态**，比如标签 `Lyra.ShooterGame.Weapon.MagazineAmmo` 对应的值就是当前弹匣子弹数。它比自己写一个 `int32 Ammo` 的好处是：加一种新的数值状态只需要新建一个 Tag，不用改类定义。
+`FGameplayTagStackContainer` 是 Lyra 的一个小工具（[`GameplayTagStack.h`](../../../Source/LyraGame/System/GameplayTagStack.h)）：一张 “GameplayTag → 整数” 的表，内部是一个 FastArray，所以只复制变化的项，并且只能在服务器上增减。Lyra 拿它存“弹匣里还有几发”“备弹有几发”这类**会变化的整数状态**，比如标签 `Lyra.ShooterGame.Weapon.MagazineAmmo` 对应的值就是当前弹匣子弹数。它比自己写一个 `int32 Ammo` 的好处是：加一种新的数值状态只需要新建一个 Tag，不用改类定义。
 
 ## 一、先看朴素做法为什么不行
 

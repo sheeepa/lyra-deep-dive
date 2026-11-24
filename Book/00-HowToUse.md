@@ -34,7 +34,7 @@
 
 后面的章节默认你读过前面的章节，每个概念只在第一次出现时详细解释，之后只链接回去。跳读时撞上陌生概念，用章末的“继续深入”或术语表（附录 A2）回头找。
 
-如果你的目标是尽快动手改 Lyra，可以走一条快速路线：第 0、2、3 章 → 第 5~8 章 → 第 10~12 章，然后按需求跳到对应章节；第 1、4、9 章遇到不懂的概念时再回头查。如果想系统掌握 UE 和 Lyra，从头读到尾，每章做完实验和自测题，最后做第 22 章的综合项目。
+如果你的目标是尽快动手改 Lyra，可以走一条快速路线：第 0、2、3 章 → 第 5-8 章 → 第 10-12 章，然后按需求跳到对应章节；第 1、4、9 章遇到不懂的概念时再回头查。如果想系统掌握 UE 和 Lyra，从头读到尾，每章做完实验和自测题，最后做第 22 章的综合项目。
 
 ### 习惯二：开着编辑器和 IDE 读
 
@@ -117,7 +117,7 @@ Lyra 是联机游戏，同一份代码可能在专用服务器、拥有者客户
 
 ### 看日志：Output Log 与日志类别
 
-打开 **窗口 → 开发者工具 → 输出日志（Output Log）**（菜单位置以你的编辑器为准）。它有一个过滤框，在里面输入文字，只显示包含它的行。更好用的是按**日志类别（Log Category）** 过滤：UE 里每条日志都属于一个类别，格式是 `LogXxx: 内容`。`Source/LyraGame/LyraLogChannels.h` 集中定义了四个全局最常用的类别（各子系统在自己的文件里还定义了 `LogLyraCheat`、`LogLyraGamePhase` 等专用类别）：
+打开 **窗口 → 开发者工具 → 输出日志（Output Log）**（菜单位置以你的编辑器为准）。它有一个过滤框，在里面输入文字，只显示包含它的行。更好用的是按**日志类别（Log Category）** 过滤：UE 里每条日志都属于一个类别，格式是 `LogXxx: 内容`。[`LyraLogChannels.h`](../../../Source/LyraGame/LyraLogChannels.h) 集中定义了四个全局最常用的类别（各子系统在自己的文件里还定义了 `LogLyraCheat`、`LogLyraGamePhase` 等专用类别）：
 
 - `LogLyra`：通用；
 - `LogLyraExperience`：Experience 的选择与加载（第 6 章）；
@@ -134,7 +134,7 @@ LogLyraExperience: EXPERIENCE: OnExperienceLoadComplete(CurrentExperience = ...,
 
 这三行来自 `ALyraGameMode::OnMatchAssignmentGiven` 和 `ULyraExperienceManagerComponent` 的日志。括号里的 `Source` 会告诉你这次的 Experience 是谁选的（URL、开发者设置、命令行、World Settings 还是默认），第 6 章会解释这个顺序。如果你看到了这几行，说明环境基本没问题。
 
-多人 PIE 里，同一个进程输出多个“世界”的日志，怎么分辨哪行是服务器、哪行是客户端？Lyra 的许多日志行带 `Server` 或 `Client` 标记，来自 `Source/LyraGame/LyraLogChannels.cpp` 的 `GetClientServerContextString`。
+多人 PIE 里，同一个进程输出多个“世界”的日志，怎么分辨哪行是服务器、哪行是客户端？Lyra 的许多日志行带 `Server` 或 `Client` 标记，来自 [`LyraLogChannels.cpp`](../../../Source/LyraGame/LyraLogChannels.cpp) 的 `GetClientServerContextString`。
 
 想临时提高某个类别的详细程度，在控制台输入引擎命令：
 
@@ -157,7 +157,7 @@ PIE 运行时按波浪线键 `` ` `` 打开控制台（或者在点击 Play **�
 
 1. 在 IDE 里把配置设为 **DebugGame Editor**（比 Development Editor 优化少，变量更容易看到，断点更可靠；代价是运行较慢），重新编译；
 2. 按 F5 启动调试，IDE 会启动编辑器并自动附加调试器（如果编辑器已经开着，也可以用“附加到进程”附加到 `UnrealEditor.exe`）；
-3. 在你想看的代码行下断点，比如 `Source/LyraGame/GameModes/LyraGameMode.cpp` 的 `ALyraGameMode::HandleMatchAssignmentIfNotExpectingOne`，然后在编辑器里运行 PIE，断点命中后可以看调用栈、变量、一步步往下走。
+3. 在你想看的代码行下断点，比如 [`LyraGameMode.cpp`](../../../Source/LyraGame/GameModes/LyraGameMode.cpp) 的 `ALyraGameMode::HandleMatchAssignmentIfNotExpectingOne`，然后在编辑器里运行 PIE，断点命中后可以看调用栈、变量、一步步往下走。
 
 调试多人 PIE 时注意：服务器和客户端在**同一个进程**里，断点会命中任意一个世界。这时可以在断点里加条件，比如判断 `GetNetMode()`，或者用调用栈窗口里对象名中的 PIE 实例编号分辨。
 
@@ -169,7 +169,7 @@ PIE 运行时按波浪线键 `` ` `` 打开控制台（或者在点击 Play **�
 2. 在蓝图编辑器的工具栏点 **Class Settings（类设置）**，在 Details 面板里看 **Parent Class（父类）**；如果父类还是一个蓝图，再打开它继续往上追，直到看到一个 C++ 类；
 3. 在 IDE 里按类名搜索（Visual Studio 里是 Ctrl+T，或“转到所有”；Rider 里是 Search Everywhere），或者在 `Source/` 目录里 grep。
 
-例如 `B_ShooterBotSpawner`（机器人生成器蓝图）的父类是 C++ 类 `ULyraBotCreationComponent`，位于 `Source/LyraGame/GameModes/LyraBotCreationComponent.h`。有些蓝图的类名路径还出现在配置文件里，比如 `Config/DefaultEngine.ini` 里的 `GameInstanceClass=/Game/B_LyraGameInstance.B_LyraGameInstance_C`：路径末尾的 `_C` 后缀就代表“由该蓝图资产生成的类”。本章末尾的实验 2 会让你亲手追一条更长的蓝图继承链。
+例如 `B_ShooterBotSpawner`（机器人生成器蓝图）的父类是 C++ 类 `ULyraBotCreationComponent`，位于 [`LyraBotCreationComponent.h`](../../../Source/LyraGame/GameModes/LyraBotCreationComponent.h)。有些蓝图的类名路径还出现在配置文件里，比如 `Config/DefaultEngine.ini` 里的 `GameInstanceClass=/Game/B_LyraGameInstance.B_LyraGameInstance_C`：路径末尾的 `_C` 后缀就代表“由该蓝图资产生成的类”。本章末尾的实验 2 会让你亲手追一条更长的蓝图继承链。
 
 反过来，想知道“这个 C++ 类被哪些蓝图继承了”，可以在内容浏览器里用右键 → 引用查看器（Reference Viewer），或者用编辑器的“类查看器”。
 
@@ -260,7 +260,7 @@ flowchart LR
     P7 --> P8
 ```
 
-每一部分的内容和章节标题见[目录](README.md)，这里只说两点。第一部分（第 1~4 章）补齐读懂 Lyra 所必需的 UE 概念，读完之后 Lyra 的源码对你就不再有“生词”。第二部分（第 5~8 章）先用四个需求推出 Lyra 的五个决定，并给你一张“12 步主干时序”的地图，后面所有章节都会指回这张地图，这是全书最重要的一部分。其余部分按系统展开，最后一章（第 22 章）综合项目让你不改 GameMode，只用 Experience、GameFeature 和组件，从零做一个新模式。附录有三份：A1 调试工具箱（按症状排查）、A2 术语表、A3 源码地图与已知坑。
+每一部分的内容和章节标题见[目录](README.md)，这里只说两点。第一部分（第 1-4 章）补齐读懂 Lyra 所必需的 UE 概念，读完之后 Lyra 的源码对你就不再有“生词”。第二部分（第 5-8 章）先用四个需求推出 Lyra 的五个决定，并给你一张“12 步主干时序”的地图，后面所有章节都会指回这张地图，这是全书最重要的一部分。其余部分按系统展开，最后一章（第 22 章）综合项目让你不改 GameMode，只用 Experience、GameFeature 和组件，从零做一个新模式。附录有三份：A1 调试工具箱（按症状排查）、A2 术语表、A3 源码地图与已知坑。
 
 ### 一个预告：Lyra 不是完美范本
 

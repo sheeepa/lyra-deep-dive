@@ -81,7 +81,7 @@ flowchart LR
 
 整个项目只有一个 GameMode 类 `ALyraGameMode`。它不知道“团队死斗”和“占点”的存在，只做三件事：**选出 Experience、等它加载完、放玩家出生**。具体玩什么，由一份叫 Experience 的数据资产决定——它列出要激活哪些插件、玩家用什么角色配置、执行哪些 Action。
 
-选择逻辑集中在 `Source/LyraGame/GameModes/LyraGameMode.cpp` 的 `ALyraGameMode::HandleMatchAssignmentIfNotExpectingOne`。这是 [第 6 章](06-Experience.md) 的主题，这里不再展开。
+选择逻辑集中在 [`LyraGameMode.cpp`](../../../Source/LyraGame/GameModes/LyraGameMode.cpp) 的 `ALyraGameMode::HandleMatchAssignmentIfNotExpectingOne`。这是 [第 6 章](06-Experience.md) 的主题，这里不再展开。
 
 Epic 的官方总览页把 Experience 描述为“一个更高级的 GameMode”，用 `ULyraExperienceDefinition` 这个类定义，你能在地图 World Settings 的 Game Mode 区域看到 `Default Gameplay Experience` 这个选项。这个类比好用，但别被它带偏：在实现上 GameMode 依然只有一个 `ALyraGameMode`，Experience 是一份数据，不是 GameMode 的子类。连主菜单也是一个 Experience（前端地图 `L_LyraFrontEnd` 的默认 Experience 是 `B_LyraFrontEnd_Experience`，资产在 `Content/System/FrontEnd/`），这是“玩法即数据”最有说服力的例子。
 
@@ -91,7 +91,7 @@ Epic 的官方总览页把 Experience 描述为“一个更高级的 GameMode”
 
 GameFeature 插件是一种有运行时状态的插件，可以在游戏过程中被激活和停用。每个插件带一个 `GameFeatureData` 资产，里面是一串 Action（动作）——“激活时对游戏做点什么，停用时撤销”的小对象：加组件、授予技能、加输入映射、往 HUD 上挂控件……
 
-于是“占点玩法”不再是核心代码里的一个分支，而是一个**默认处于未激活状态的插件**。看 `Plugins/GameFeatures/ShooterCore/ShooterCore.uplugin`：`BuiltInInitialFeatureState` 是 `Registered`，`EnabledByDefault` 是 `false`。启动时它只是被登记，直到某个 Experience 说“我需要 ShooterCore”才会被激活。
+于是“占点玩法”不再是核心代码里的一个分支，而是一个**默认处于未激活状态的插件**。看 [`ShooterCore.uplugin`](../../../Plugins/GameFeatures/ShooterCore/ShooterCore.uplugin)：`BuiltInInitialFeatureState` 是 `Registered`，`EnabledByDefault` 是 `false`。启动时它只是被登记，直到某个 Experience 说“我需要 ShooterCore”才会被激活。
 
 这也是 Epic 官方总览页明确写出的组织约定：`Content` 目录里只放通用资产和主菜单（前端），游戏的核心内容放在 `Plugins/GameFeatures/` 下的 GameFeature 插件里；玩家在大厅选了某个玩法，游戏才加载它需要的插件。比如选团队死斗，会加载 `ShooterCore`（Pawn 与机制）和 `ShooterMaps`（关卡）。
 
@@ -103,7 +103,7 @@ GameFeature 插件是一种有运行时状态的插件，可以在游戏过程�
 
 插件之后只需要对管理器说：“凡是 `ALyraCharacter`，都给我加上这个组件。”管理器负责让**现在已经存在的和将来才出生的**每一个符合条件的 Actor 都拿到组件，并在请求撤销时把它们拿走。
 
-看 `Plugins/ModularGameplayActors/Source/ModularGameplayActors/Private/ModularCharacter.cpp`，登记就这么几行：
+看 [`ModularCharacter.cpp`](../../../Plugins/ModularGameplayActors/Source/ModularGameplayActors/Private/ModularCharacter.cpp)，登记就这么几行：
 
 ```cpp
 // 来自 Plugins/ModularGameplayActors/.../Private/ModularCharacter.cpp 的 AModularCharacter
@@ -130,7 +130,7 @@ void AModularCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 联网时，Pawn、PlayerState、Controller、输入组件到达客户端的顺序不确定。Lyra 不去猜顺序，而是让每个需要这些数据的组件各自声明条件：“我需要 PlayerState 才能进入 `DataAvailable` 状态”。每当任何数据到达（一次 OnRep、一次 Possess、一次输入组件创建……），所有组件都重新检查一次自己的条件，条件满足就前进一步。顺序再乱，最后都会收敛到同一个结果。
 
-四个状态是 `InitState.Spawned → DataAvailable → DataInitialized → GameplayReady`。注册它们的地方在 `Source/LyraGame/System/LyraGameInstance.cpp` 的 `ULyraGameInstance::Init`。这是 [第 8 章](08-PawnAssembly.md) 的主题。
+四个状态是 `InitState.Spawned → DataAvailable → DataInitialized → GameplayReady`。注册它们的地方在 [`LyraGameInstance.cpp`](../../../Source/LyraGame/System/LyraGameInstance.cpp) 的 `ULyraGameInstance::Init`。这是 [第 8 章](08-PawnAssembly.md) 的主题。
 
 **代价**：初始化流程不再是读一遍函数就能看懂的直线，而是“事件触发 + 条件检查”的网。更要命的是：只要有一个组件永远到不了 `DataAvailable`，整个 Pawn 就会卡住——能出生，但没有输入、没有技能。
 
@@ -160,7 +160,7 @@ ALyraPlayerState::ALyraPlayerState(const FObjectInitializer& ObjectInitializer)
 
 五个决定之外还有一个贯穿全局的做法：**系统之间尽量不互相引用类，而是约定 GameplayTag**。输入到技能用 `InputTag.*`；HUD 槽位用 `HUD.Slot.*`；UI 层用 `UI.Layer.*`；初始化阶段用 `InitState.*`；消息频道用各种带 `.Message` 后缀的 Tag。
 
-一个能立刻用上的推论：在 Lyra 里想知道“谁和谁连在一起”，**第一步搜 Tag，而不是搜类名**。比如想知道某个 HUD 元素从哪来，去搜它挂的 `HUD.Slot.xxx`，就能找到是哪个 Experience 或 ActionSet 里的 `Add Widgets` 把它放进了那个槽位。原生 Tag 定义在 `Source/LyraGame/LyraGameplayTags.cpp`，其余在 `Config/DefaultGameplayTags.ini`。
+一个能立刻用上的推论：在 Lyra 里想知道“谁和谁连在一起”，**第一步搜 Tag，而不是搜类名**。比如想知道某个 HUD 元素从哪来，去搜它挂的 `HUD.Slot.xxx`，就能找到是哪个 Experience 或 ActionSet 里的 `Add Widgets` 把它放进了那个槽位。原生 Tag 定义在 [`LyraGameplayTags.cpp`](../../../Source/LyraGame/LyraGameplayTags.cpp)，其余在 `Config/DefaultGameplayTags.ini`。
 
 回头看一眼：五个决定里，每一个都是“把耦合从类关系挪到数据/事件上”。这是整个 Lyra 的一句话心智模型——**C++ 提供空壳，数据资产描述玩法，GameFeature 在运行时把玩法注入空壳，所有连接靠 Tag 和“注册-等待”回调完成。**
 

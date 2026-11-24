@@ -2,7 +2,7 @@
 
 ## 一个问题：`ULyraPawnData` 里的一行声明，凭什么能被策划改、被蓝图读、被存盘、被引擎回收？
 
-打开 `Source/LyraGame/Character/LyraPawnData.h`，你会看到这样几行：
+打开 [`LyraPawnData.h`](../../../Source/LyraGame/Character/LyraPawnData.h)，你会看到这样几行：
 
 ```cpp
 UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|Pawn")
@@ -92,7 +92,7 @@ flowchart LR
 | 蓝图可见 | 否 | 是（标了 `UFUNCTION`/`UPROPERTY` 的部分） |
 | 类型转换 | `dynamic_cast`（UE 默认关闭 RTTI） | `Cast<T>()`，基于反射的类层次 |
 
-这里有一个小细节：UE 默认不开启 C++ RTTI，所以你在 Lyra 里永远看不到 `dynamic_cast`，而是 `Cast<T>(Obj)`，比如 `Source/LyraGame/Character/LyraCharacter.cpp` 的构造函数里：
+这里有一个小细节：UE 默认不开启 C++ RTTI，所以你在 Lyra 里永远看不到 `dynamic_cast`，而是 `Cast<T>(Obj)`，比如 [`LyraCharacter.cpp`](../../../Source/LyraGame/Character/LyraCharacter.cpp) 的构造函数里：
 
 ```cpp
 // 简化自 Source/LyraGame/Character/LyraCharacter.cpp 的 ALyraCharacter::ALyraCharacter
@@ -106,7 +106,7 @@ ULyraCharacterMovementComponent* LyraMoveComp = CastChecked<ULyraCharacterMoveme
 UObject 很重：每个实例有额外的头部数据，要被 GC 追踪，创建流程也复杂。所以 UE 提供了三档选择，Lyra 里三档都用：
 
 - **UObject / Actor / 组件**：需要被引用、需要多态、需要被引擎管理生命周期、需要作为资产。例如 `ULyraPawnData`。
-- **USTRUCT**：轻量的数据包，值语义（按值拷贝），有反射（能存盘、能被复制、能放进蓝图），但**不继承 UObject**，也没有自己的生命周期。例如 `Source/LyraGame/Development/LyraDeveloperSettings.h` 中的 `FLyraCheatToRun`（里面的 `Phase` 成员类型 `ECheatExecutionTime` 是一个 `UENUM`）。
+- **USTRUCT**：轻量的数据包，值语义（按值拷贝），有反射（能存盘、能被复制、能放进蓝图），但**不继承 UObject**，也没有自己的生命周期。例如 [`LyraDeveloperSettings.h`](../../../Source/LyraGame/Development/LyraDeveloperSettings.h) 中的 `FLyraCheatToRun`（里面的 `Phase` 成员类型 `ECheatExecutionTime` 是一个 `UENUM`）。
 - **普通 C++**：纯算法、工具、不需要和编辑器/蓝图/网络打交道的东西。
 
 `USTRUCT` 里的成员都写了初始值（`ECheatExecutionTime Phase = ECheatExecutionTime::OnPlayerPawnPossession;`），这是个不起眼的规矩。Lyra 的 `Config/DefaultEngine.ini` 里有一段 `[CoreUObject.UninitializedScriptStructMembersCheck]`，把“反射成员没有初始化”设为 `Error` 级别：反射成员会被存盘和复制，读到未初始化的随机值既难复现又难排查。你自己写 `UPROPERTY` 成员时，养成“永远写初始值”的习惯。
@@ -115,7 +115,7 @@ UObject 很重：每个实例有额外的头部数据，要被 GC 追踪，创�
 
 ## 2. 反射在代码里长什么样：UHT 与 `GENERATED_BODY()`
 
-五个宏你会天天见到：`UCLASS`（标记一个 UObject 派生类，如 `ULyraPawnData`）、`USTRUCT`（值类型数据结构）、`UENUM`（枚举）、`UPROPERTY`（成员变量）、`UFUNCTION`（成员函数）。每个被标记的类体内必须写 `GENERATED_BODY()`，而且这个头文件的**最后一个 `#include` 必须是 `XXX.generated.h`**。看一眼 `Source/LyraGame/Character/LyraPawnData.h` 的骨架：
+五个宏你会天天见到：`UCLASS`（标记一个 UObject 派生类，如 `ULyraPawnData`）、`USTRUCT`（值类型数据结构）、`UENUM`（枚举）、`UPROPERTY`（成员变量）、`UFUNCTION`（成员函数）。每个被标记的类体内必须写 `GENERATED_BODY()`，而且这个头文件的**最后一个 `#include` 必须是 `XXX.generated.h`**。看一眼 [`LyraPawnData.h`](../../../Source/LyraGame/Character/LyraPawnData.h) 的骨架：
 
 ```cpp
 // 简化自 Source/LyraGame/Character/LyraPawnData.h
@@ -204,13 +204,13 @@ for (TFieldIterator<FProperty> PropIt(CommonClass); PropIt; ++PropIt)   // 遍�
 | `VisibleAnywhere` | 只读可见 | 只读可见 |
 | 什么都不写 | 不可见 | 不可见 |
 
-`ULyraPawnData` 的所有成员都是 `EditDefaultsOnly`：PawnData 是数据资产，没有“关卡里的实例”，只在资产里编辑。`Source/LyraGame/Player/LyraPlayerState.h` 里的 ASC 子对象是 `VisibleAnywhere`：你能在 Details 面板看到它，但不该换掉它。
+`ULyraPawnData` 的所有成员都是 `EditDefaultsOnly`：PawnData 是数据资产，没有“关卡里的实例”，只在资产里编辑。[`LyraPlayerState.h`](../../../Source/LyraGame/Player/LyraPlayerState.h) 里的 ASC 子对象是 `VisibleAnywhere`：你能在 Details 面板看到它，但不该换掉它。
 
 蓝图侧是另一组：`BlueprintReadOnly`（蓝图只能读）、`BlueprintReadWrite`（能读能写），不写则蓝图看不见。**这两组说明符都不是访问控制**：它们只约束编辑器 UI 和蓝图，C++ 代码照样能写一个 `EditDefaultsOnly` 的成员。
 
 ### 存不存盘、复制不复制、从哪读配置？
 
-`Transient` 表示这个属性不存盘，每次加载都是默认值。Lyra 的 `Source/LyraGame/GameModes/LyraBotCreationComponent.h` 里有一个典型：
+`Transient` 表示这个属性不存盘，每次加载都是默认值。Lyra 的 [`LyraBotCreationComponent.h`](../../../Source/LyraGame/GameModes/LyraBotCreationComponent.h) 里有一个典型：
 
 ```cpp
 // 简化自 Source/LyraGame/GameModes/LyraBotCreationComponent.h
@@ -223,11 +223,11 @@ TArray<TObjectPtr<AAIController>> SpawnedBotList;   // 运行时状态：不存�
 
 运行时的状态不该存进资产，所以是 `Transient`；但它里面装着对象指针，**必须是 `UPROPERTY`**，否则 GC 看不见它们（第 5 节）。`Transient` 和 `UPROPERTY` 并不矛盾。
 
-`Replicated` / `ReplicatedUsing=OnRep_X` 表示属性要网络复制，第 3 章细讲。`Config` 表示值从 ini 读取：`Source/LyraGame/Development/LyraDeveloperSettings.h` 里的 `ExperienceOverride` 就是 `config`，它所在的类声明了 `config=EditorPerProjectUserSettings`。“ini 的值读进了哪里”，第 6 节讲 CDO 时回答。
+`Replicated` / `ReplicatedUsing=OnRep_X` 表示属性要网络复制，第 3 章细讲。`Config` 表示值从 ini 读取：[`LyraDeveloperSettings.h`](../../../Source/LyraGame/Development/LyraDeveloperSettings.h) 里的 `ExperienceOverride` 就是 `config`，它所在的类声明了 `config=EditorPerProjectUserSettings`。“ini 的值读进了哪里”，第 6 节讲 CDO 时回答。
 
 ### 内嵌子对象：`Instanced`，以及 `meta=(...)`
 
-`Source/LyraGame/GameModes/LyraExperienceDefinition.h` 里的 `Actions`：
+[`LyraExperienceDefinition.h`](../../../Source/LyraGame/GameModes/LyraExperienceDefinition.h) 里的 `Actions`：
 
 ```cpp
 UPROPERTY(EditDefaultsOnly, Instanced, Category="Actions")
@@ -236,7 +236,7 @@ TArray<TObjectPtr<UGameFeatureAction>> Actions;
 
 普通对象指针属性（比如 `DefaultPawnData`）表示“引用另一个独立资产”。加上 `Instanced`，意思变成“这个资产**拥有**这些子对象”：每个 Action 是 Experience 资产内部的子对象，在编辑器里直接展开编辑，不会出现在内容浏览器里。第 6 章会用到这一点。
 
-`meta` 里的内容不影响运行时，只影响编辑器。Lyra 里有三个：`meta=(AllowedTypes="LyraExperienceDefinition")`（`ExperienceOverride` 上，只允许选这个类型的主资产）；`meta=(TitleProperty=Ability)`（`Source/LyraGame/AbilitySystem/LyraAbilitySet.h` 里，数组每一项的标题显示它的 `Ability` 字段而不是“Element 0”）；`meta=(AssetBundles="Client,Server")`（`GameFeatureAction_AddInputBinding.h` 里，给资产包系统用，第 4 章讲）。
+`meta` 里的内容不影响运行时，只影响编辑器。Lyra 里有三个：`meta=(AllowedTypes="LyraExperienceDefinition")`（`ExperienceOverride` 上，只允许选这个类型的主资产）；`meta=(TitleProperty=Ability)`（[`LyraAbilitySet.h`](../../../Source/LyraGame/AbilitySystem/LyraAbilitySet.h) 里，数组每一项的标题显示它的 `Ability` 字段而不是“Element 0”）；`meta=(AssetBundles="Client,Server")`（`GameFeatureAction_AddInputBinding.h` 里，给资产包系统用，第 4 章讲）。
 
 ### `UFUNCTION`：C++ 和蓝图怎么互相调用
 
@@ -248,7 +248,7 @@ TArray<TObjectPtr<UGameFeatureAction>> Actions;
 | `BlueprintImplementableEvent` | 只声明，**没有**函数体 | 蓝图实现它；C++ 调用它等于“发事件” |
 | `BlueprintNativeEvent` | 你写默认实现 `Xxx_Implementation` | 蓝图可以覆盖；不覆盖则走 C++ 默认实现 |
 
-`BlueprintImplementableEvent` 在 Lyra 里的例子是 `Source/LyraGame/AbilitySystem/Abilities/LyraGameplayAbility.h` 里的 `K2_OnAbilityAdded()`：技能被授予时 C++ 调用它，蓝图技能子类实现了就执行蓝图逻辑，没实现就什么也不发生。
+`BlueprintImplementableEvent` 在 Lyra 里的例子是 [`LyraGameplayAbility.h`](../../../Source/LyraGame/AbilitySystem/Abilities/LyraGameplayAbility.h) 里的 `K2_OnAbilityAdded()`：技能被授予时 C++ 调用它，蓝图技能子类实现了就执行蓝图逻辑，没实现就什么也不发生。
 
 `BlueprintNativeEvent` 的例子在 `LyraBotCreationComponent`：
 
@@ -265,7 +265,7 @@ void ULyraBotCreationComponent::ServerCreateBots_Implementation()   // .cpp 里�
 
 规则是：**头文件里声明 `Foo`，.cpp 里要写 `Foo_Implementation`**。UHT 生成的 `Foo()` 会先查有没有蓝图覆盖，没有就调用你的 `_Implementation`。
 
-回头看第 2 节那两行生成代码：`GetDefaultPawnClassForController_Implementation` 被生成为一个**虚函数**，所以 C++ 子类可以直接 `override` 它。`Source/LyraGame/GameModes/LyraGameMode.h` 里的 `GetDefaultPawnClassForController_Implementation`、`HandleStartingNewPlayer_Implementation` 都是这么来的：覆盖带 `_Implementation` 后缀的版本，需要时调 `Super::Xxx_Implementation(...)`。这是 UE 里“引擎提供的可覆盖钩子”最常见的形态，你读 Lyra 会反复看到。
+回头看第 2 节那两行生成代码：`GetDefaultPawnClassForController_Implementation` 被生成为一个**虚函数**，所以 C++ 子类可以直接 `override` 它。[`LyraGameMode.h`](../../../Source/LyraGame/GameModes/LyraGameMode.h) 里的 `GetDefaultPawnClassForController_Implementation`、`HandleStartingNewPlayer_Implementation` 都是这么来的：覆盖带 `_Implementation` 后缀的版本，需要时调 `Super::Xxx_Implementation(...)`。这是 UE 里“引擎提供的可覆盖钩子”最常见的形态，你读 Lyra 会反复看到。
 
 另有一个小标记 `BlueprintAuthorityOnly`：函数只在拥有权威的一端（通常是服务器）才会被蓝图执行，第 3 章讲网络时回来解释。
 
@@ -281,7 +281,7 @@ void ULyraBotCreationComponent::ServerCreateBots_Implementation()   // .cpp 里�
 | `NewObject<T>(Outer, Class)` | 运行时创建一个**非 Actor** 的 UObject | 受 GC 管理，需要被某个 `UPROPERTY` 引用着 |
 | `World->SpawnActor<T>` | 运行时往世界里放一个 **Actor** | 登记进 World，参与 Tick、复制、渲染 |
 
-三种在 Lyra 里都有真实用例。**构造函数里预装组件**（`Source/LyraGame/Character/LyraCharacter.cpp`）：
+三种在 Lyra 里都有真实用例。**构造函数里预装组件**（[`LyraCharacter.cpp`](../../../Source/LyraGame/Character/LyraCharacter.cpp)）：
 
 ```cpp
 // 简化自 Source/LyraGame/Character/LyraCharacter.cpp 的 ALyraCharacter::ALyraCharacter
@@ -297,7 +297,7 @@ ALyraCharacter::ALyraCharacter(const FObjectInitializer& ObjectInitializer)
 
 `FObjectInitializer` 是 UE 创建每个 UObject 时传给构造函数的“初始化上下文”，`SetDefaultSubobjectClass` 能在不改引擎代码的前提下，把父类的某个默认子对象换成自己的子类。每个子对象有个名字（`TEXT("HealthComponent")`），它是子对象在这个类里的“身份证”，蓝图子类和存盘数据靠它找到对应的子对象，**不要随便改**。
 
-**运行时造非 Actor 对象**（`Source/LyraGame/Equipment/LyraEquipmentManagerComponent.cpp`，“穿上一件装备”时）：
+**运行时造非 Actor 对象**（[`LyraEquipmentManagerComponent.cpp`](../../../Source/LyraGame/Equipment/LyraEquipmentManagerComponent.cpp)，“穿上一件装备”时）：
 
 ```cpp
 // 简化自 Source/LyraGame/Equipment/LyraEquipmentManagerComponent.cpp 的 FLyraEquipmentList::AddEntry
@@ -333,7 +333,7 @@ AAIController* NewController = GetWorld()->SpawnActor<AAIController>(
 
 ### Lyra 的做法
 
-规则很简单：**类成员里的 UObject 指针，必须是 `UPROPERTY`，并且写成 `TObjectPtr<T>`**。Lyra 到处遵守，`Source/LyraGame/Player/LyraPlayerState.cpp` 的构造函数里有一条很直白的注释：
+规则很简单：**类成员里的 UObject 指针，必须是 `UPROPERTY`，并且写成 `TObjectPtr<T>`**。Lyra 到处遵守，[`LyraPlayerState.cpp`](../../../Source/LyraGame/Player/LyraPlayerState.cpp) 的构造函数里有一条很直白的注释：
 
 ```cpp
 // 简化自 Source/LyraGame/Player/LyraPlayerState.cpp 的 ALyraPlayerState::ALyraPlayerState
@@ -345,7 +345,7 @@ CombatSet = CreateDefaultSubobject<ULyraCombatSet>(TEXT("CombatSet"));
 
 对应的头文件里，`HealthSet` 声明成 `UPROPERTY() TObjectPtr<const class ULyraHealthSet> HealthSet;`。这个成员存在的意义之一，就是保持一个“GC 能看见的引用”，让对象在被别人取走之前不会被回收。
 
-更狠的是，Lyra 的 `Source/LyraEditor.Target.cs`（编辑器的构建目标配置，第 21 章会讲）里有：
+更狠的是，Lyra 的 [`LyraEditor.Target.cs`](../../../Source/LyraEditor.Target.cs)（编辑器的构建目标配置，第 21 章会讲）里有：
 
 ```csharp
 // 简化自 Source/LyraEditor.Target.cs
@@ -363,11 +363,11 @@ if (!bBuildAllModules)
 - **`TWeakObjectPtr<T>`**：弱引用，**不阻止回收**，对象被回收后自动失效，用 `.IsValid()` / `.Get()` 判断。适合“只想观察、不想拥有”。Lyra 的 `GameFeatureAction_AddInputBinding.h` 里有 `TArray<TWeakObjectPtr<APawn>> PawnsAddedTo`：这个 Action 只想记住“我给哪些 Pawn 加过输入”，绝不该因此让 Pawn 无法销毁。
 - **裸指针 `T*`**：只用于函数的**局部变量或参数**，生命周期短到不会跨越 GC。
 
-如果你的类**根本不是 UObject**（比如一个 Slate 控件——UE 底层的纯 C++ UI 框架，不继承 UObject）却要持有 UObject，就要继承 `FGCObject` 并手动汇报引用：Lyra 的 `SActorCanvas`（`Source/LyraGame/UI/IndicatorSystem/SActorCanvas.cpp`）在 `AddReferencedObjects` 里调用 `Collector.AddReferencedObjects(AllIndicators)`，就是在告诉 GC“这些对象我还在用”。
+如果你的类**根本不是 UObject**（比如一个 Slate 控件——UE 底层的纯 C++ UI 框架，不继承 UObject）却要持有 UObject，就要继承 `FGCObject` 并手动汇报引用：Lyra 的 `SActorCanvas`（[`SActorCanvas.cpp`](../../../Source/LyraGame/UI/IndicatorSystem/SActorCanvas.cpp)）在 `AddReferencedObjects` 里调用 `Collector.AddReferencedObjects(AllIndicators)`，就是在告诉 GC“这些对象我还在用”。
 
 ### `IsValid` 和 `!= nullptr` 不一样
 
-一个 Actor 被 `Destroy()` 之后、真正被 GC 释放之前，指向它的指针不是 `nullptr`，但它已被标记为“待回收”。所以 UE 代码里判断对象可用，用 `IsValid(Obj)`，它同时检查“非空”和“没被标记销毁”。Lyra 里 `Source/LyraGame/AbilitySystem/LyraAbilitySet.cpp` 授予属性集时就写了 `if (!IsValid(SetToGrant.AttributeSet)) { …报错并 continue… }`。
+一个 Actor 被 `Destroy()` 之后、真正被 GC 释放之前，指向它的指针不是 `nullptr`，但它已被标记为“待回收”。所以 UE 代码里判断对象可用，用 `IsValid(Obj)`，它同时检查“非空”和“没被标记销毁”。Lyra 里 [`LyraAbilitySet.cpp`](../../../Source/LyraGame/AbilitySystem/LyraAbilitySet.cpp) 授予属性集时就写了 `if (!IsValid(SetToGrant.AttributeSet)) { …报错并 continue… }`。
 
 GC 换来的是：不用手写 `delete`，不会因循环引用泄漏，引擎能做全局的“谁还在用这个资产”分析。代价是：你必须记住**每一个跨函数存放的 UObject 指针都要让 GC 看见**。把它变成肌肉记忆：成员指针 = `UPROPERTY` + `TObjectPtr`。
 
@@ -420,7 +420,7 @@ ExperienceId = GetDefault<ULyraDeveloperSettings>()->ExperienceOverride;
 
 三个例子的共同点是：**数据放在类的 CDO 里，运行时只读**。这就是 `ULyraExperienceDefinition`、`ULyraPawnData` 这些“定义类”标 `UCLASS(Const)` 的原因：`Const` 向读代码的人表明“这是只读数据”。CDO 是进程内全局共享的，如果有人用 `GetMutableDefault` 改了它，所有之后使用这个类的地方都会受影响。
 
-另一个小提醒：CDO 也是真实存在的 UObject，用 `TObjectIterator` 遍历“所有 `UAbilitySystemComponent`”会连各种类的 CDO 一起遍历到。`Source/LyraGame/UI/LyraHUD.cpp` 的 `GetDebugActorList` 里就用 `if (!ASC->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject))` 把它们过滤掉：`RF_ClassDefaultObject` 标出类的 CDO，`RF_ArchetypeObject` 标出蓝图里为组件预配置的原型模板对象，两者都不是场景里真正在跑的实例。
+另一个小提醒：CDO 也是真实存在的 UObject，用 `TObjectIterator` 遍历“所有 `UAbilitySystemComponent`”会连各种类的 CDO 一起遍历到。[`LyraHUD.cpp`](../../../Source/LyraGame/UI/LyraHUD.cpp) 的 `GetDebugActorList` 里就用 `if (!ASC->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject))` 把它们过滤掉：`RF_ClassDefaultObject` 标出类的 CDO，`RF_ArchetypeObject` 标出蓝图里为组件预配置的原型模板对象，两者都不是场景里真正在跑的实例。
 
 ---
 
@@ -447,7 +447,7 @@ GameInstanceClass=/Game/B_LyraGameInstance.B_LyraGameInstance_C
 
 ### 反射的一个实用例子：校验“只能继承一层”
 
-这条规则是怎么在代码里强制的？看 `Source/LyraGame/GameModes/LyraExperienceDefinition.cpp` 的 `IsDataValid`：
+这条规则是怎么在代码里强制的？看 [`LyraExperienceDefinition.cpp`](../../../Source/LyraGame/GameModes/LyraExperienceDefinition.cpp) 的 `IsDataValid`：
 
 ```cpp
 // 简化自 Source/LyraGame/GameModes/LyraExperienceDefinition.cpp 的 ULyraExperienceDefinition::IsDataValid
@@ -488,7 +488,7 @@ EDataValidationResult ULyraExperienceDefinition::IsDataValid(FDataValidationCont
 
 最直观的做法是 C++ 多重继承：写一个纯虚的接口类，让它们都继承。这能做，但 UE 还要回答：`Cast<>` 能不能转成接口？蓝图认不认识这个接口？一个纯 C++ 抽象类，反射系统看不见。
 
-UE 的接口由两个类配合组成。看 `Source/LyraGame/Teams/LyraTeamAgentInterface.h`：
+UE 的接口由两个类配合组成。看 [`LyraTeamAgentInterface.h`](../../../Source/LyraGame/Teams/LyraTeamAgentInterface.h)：
 
 ```cpp
 // 简化自 Source/LyraGame/Teams/LyraTeamAgentInterface.h
@@ -630,7 +630,7 @@ int32 AMyProbeActor::ComputeScore_Implementation() const
 
 **步骤**：
 
-1. 在 `Source/LyraGame/GameModes/LyraGameMode.cpp` 的 `ALyraGameMode::ALyraGameMode` 构造函数体内（赋值语句之后）临时加一行：
+1. 在 [`LyraGameMode.cpp`](../../../Source/LyraGame/GameModes/LyraGameMode.cpp) 的 `ALyraGameMode::ALyraGameMode` 构造函数体内（赋值语句之后）临时加一行：
 
 ```cpp
 UE_LOG(LogLyra, Warning, TEXT("[CtorProbe] ALyraGameMode ctor: %s (%s)"),

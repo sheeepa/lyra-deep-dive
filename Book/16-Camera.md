@@ -385,11 +385,9 @@ void ULyraCameraModeStack::PushCameraMode(TSubclassOf<ULyraCameraMode> CameraMod
 {
     ULyraCameraMode* CameraMode = GetCameraModeInstance(CameraModeClass);   // 按类取缓存实例
     int32 StackSize = CameraModeStack.Num();
+    if ((StackSize > 0) && (CameraModeStack[0] == CameraMode)) return;      // ① 已经在最上面：什么都不做
 
-    if ((StackSize > 0) && (CameraModeStack[0] == CameraMode))
-        return;                                  // ① 已经在最上面：什么都不做
-
-    // ② 如果它已经在栈里（比如正在淡出），算出它"现在对最终画面贡献了多少"
+    // ② 如果它已经在栈里（比如正在淡出），算出它“现在对最终画面贡献了多少”
     int32 ExistingStackIndex = INDEX_NONE;
     float ExistingStackContribution = 1.0f;
     for (int32 StackIndex = 0; StackIndex < StackSize; ++StackIndex)
@@ -397,24 +395,19 @@ void ULyraCameraModeStack::PushCameraMode(TSubclassOf<ULyraCameraMode> CameraMod
         if (CameraModeStack[StackIndex] == CameraMode)
         {
             ExistingStackIndex = StackIndex;
-            ExistingStackContribution *= CameraMode->GetBlendWeight();       // 自己的权重
+            ExistingStackContribution *= CameraMode->GetBlendWeight();      // 自己的权重
             break;
         }
-        else
-        {
-            ExistingStackContribution *= (1.0f - CameraModeStack[StackIndex]->GetBlendWeight()); // 压在它上面的每层"挡掉"一部分
-        }
+        ExistingStackContribution *= (1.0f - CameraModeStack[StackIndex]->GetBlendWeight()); // 压在上面的每层挡掉一部分
     }
     if (ExistingStackIndex != INDEX_NONE) { CameraModeStack.RemoveAt(ExistingStackIndex); StackSize--; }
     else                                  { ExistingStackContribution = 0.0f; }
 
-    // ③ 决定起始权重：要淡入且栈非空 → 从"现有贡献"开始；否则直接 1
+    // ③ 决定起始权重：要淡入且栈非空 → 从“现有贡献”开始；否则直接 1
     const bool bShouldBlend = (CameraMode->GetBlendTime() > 0.0f) && (StackSize > 0);
     CameraMode->SetBlendWeight(bShouldBlend ? ExistingStackContribution : 1.0f);
-
-    CameraModeStack.Insert(CameraMode, 0);       // ④ 放到最顶
+    CameraModeStack.Insert(CameraMode, 0);        // ④ 放到最顶
     CameraModeStack.Last()->SetBlendWeight(1.0f); // ⑤ 栈底永远 100%
-
     if (ExistingStackIndex == INDEX_NONE) CameraMode->OnActivation();
 }
 ```
@@ -801,8 +794,8 @@ TP 在下标 1，贡献 = (1 − 0.5) × 1 = 0.5。TP 被移除后以起始权�
 ## 继续深入
 
 - 函数级调用链（带行号）：[参考手册 60 §8.1](../Reference/60-Presentation.md)；设计意图：[参考手册 60 §10.1](../Reference/60-Presentation.md)。
-- 本章用到的源码：`Source/LyraGame/Camera/LyraCameraComponent.cpp`、`Source/LyraGame/Camera/LyraCameraMode.cpp`、`Source/LyraGame/Camera/LyraCameraMode_ThirdPerson.cpp`、`Source/LyraGame/Camera/LyraPlayerCameraManager.cpp`、`Source/LyraGame/Character/LyraHeroComponent.cpp`。
-- 一个“不基于第三人称”的相机模式示例：TopDownArena 插件里的 `Plugins/GameFeatures/TopDownArena/Source/TopDownArenaRuntime/Private/LyraCameraMode_TopDownArenaCamera.cpp`（只重写 `UpdateView`，把相机固定在竞技场上空）。
+- 本章用到的源码：[`LyraCameraComponent.cpp`](../../../Source/LyraGame/Camera/LyraCameraComponent.cpp)、[`LyraCameraMode.cpp`](../../../Source/LyraGame/Camera/LyraCameraMode.cpp)、[`LyraCameraMode_ThirdPerson.cpp`](../../../Source/LyraGame/Camera/LyraCameraMode_ThirdPerson.cpp)、[`LyraPlayerCameraManager.cpp`](../../../Source/LyraGame/Camera/LyraPlayerCameraManager.cpp)、[`LyraHeroComponent.cpp`](../../../Source/LyraGame/Character/LyraHeroComponent.cpp)。
+- 一个“不基于第三人称”的相机模式示例：TopDownArena 插件里的 [`LyraCameraMode_TopDownArenaCamera.cpp`](../../../Plugins/GameFeatures/TopDownArena/Source/TopDownArenaRuntime/Private/LyraCameraMode_TopDownArenaCamera.cpp)（只重写 `UpdateView`，把相机固定在竞技场上空）。
 - **官方资料**：Epic 没有 Lyra 相机的专页，本章的设计意图来自源码阅读（凡无法直接证实的动机已标“推断”）。想补引擎侧的背景，可以读 Epic 文档站上 `APlayerCameraManager`、`UCameraComponent` 的 API 参考页（在 [dev.epicgames.com/documentation](https://dev.epicgames.com/documentation/en-us/unreal-engine/) 搜类名即可），以及 Camera Shake / View Target 相关的引擎文档，行为细节以 5.8 引擎源码为准。
 - **社区**：[ModularCameraSystem](https://github.com/Solessfir/ModularCameraSystem)——把 Lyra 的相机模式栈移植成独立插件，README 解释了栈与混合，适合对照本章的 `PushCameraMode` / `BlendStack`（移植时间早于 5.8）。中文社区有若干 Lyra 学习系列（知乎搜“Lyra 相机”），质量参差，建议只当旁证。
 - 前面章节讲过的技能与武器：[第 14 章 武器与射击](14-Weapons.md)；Pawn 初始化链里 HeroComponent 的位置：[第 8 章](08-PawnAssembly.md)。

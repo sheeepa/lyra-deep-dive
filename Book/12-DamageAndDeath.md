@@ -31,7 +31,7 @@
 
 ### WITH_SERVER_CODE：编译期的“服务器专属代码”开关
 
-它是构建系统为每个目标（Target）定义的宏。构建规则里，只有类型为 `Client` 的目标会把它定义为 0，其余（编辑器、游戏、专用服务器）都是 1（5.8 的 `TargetRules.cs` 里 `bWithServerCode` 默认等于 `Type != TargetType.Client`）。Lyra 的 `Source/LyraClient.Target.cs` 就是一个 `Client` 目标。
+它是构建系统为每个目标（Target）定义的宏。构建规则里，只有类型为 `Client` 的目标会把它定义为 0，其余（编辑器、游戏、专用服务器）都是 1（5.8 的 `TargetRules.cs` 里 `bWithServerCode` 默认等于 `Type != TargetType.Client`）。Lyra 的 [`LyraClient.Target.cs`](../../../Source/LyraClient.Target.cs) 就是一个 `Client` 目标。
 
 它解决的问题是：纯客户端的发行包里不应该包含“怎么算伤害”这种逻辑，既省体积，也让作弊者无从反编译。C++ 里写 `#if WITH_SERVER_CODE ... #endif`，客户端包里这段代码就不存在。
 
@@ -98,7 +98,7 @@ EffectContext->AddSourceObject(SourceObject);
 
 ### 另一个入口：SetByCaller 版通用伤害 GE
 
-作弊命令、掉出地图、自杀，需要一个“我只想告诉你扣多少”的 GE。`Source/LyraGame/System/LyraGameData.h` 里放了两个全局资产引用：
+作弊命令、掉出地图、自杀，需要一个“我只想告诉你扣多少”的 GE。[`LyraGameData.h`](../../../Source/LyraGame/System/LyraGameData.h) 里放了两个全局资产引用：
 
 ```cpp
 // 简化自 Source/LyraGame/System/LyraGameData.h
@@ -190,7 +190,7 @@ if (HitActor)
 }
 ```
 
-队伍判断不是提前 `return`，而是算出一个 0 或 1 的**乘数**乘进公式。`CanCauseDamage`（`Source/LyraGame/Teams/LyraTeamSubsystem.cpp`）的规则值得记住，因为“打不掉血”是最常见的 bug 之一：
+队伍判断不是提前 `return`，而是算出一个 0 或 1 的**乘数**乘进公式。`CanCauseDamage`（[`LyraTeamSubsystem.cpp`](../../../Source/LyraGame/Teams/LyraTeamSubsystem.cpp)）的规则值得记住，因为“打不掉血”是最常见的 bug 之一：
 
 - 参数 `bAllowDamageToSelf` 默认 true，发起者就是目标（或同一个 PlayerState）时直接放行，所以**打自己是允许的**；
 - 否则比较队伍：`DifferentTeams` 才放行，`OnSameTeam` 不行（函数头注释写“考虑友军伤害设置”，但当前实现里没有这样的设置）；
@@ -217,7 +217,7 @@ if (const ILyraAbilitySourceInterface* AbilitySource = TypedContext->GetAbilityS
 DistanceAttenuation = FMath::Max(DistanceAttenuation, 0.0f);
 ```
 
-这里体现 `ILyraAbilitySourceInterface`（`Source/LyraGame/AbilitySystem/LyraAbilitySourceInterface.h`）的价值：它只有两个纯虚函数，`GetDistanceAttenuation` 和 `GetPhysicalMaterialAttenuation`，都返回倍率。Execution 不知道“武器”是什么，只知道“来源”能回答这两个问题；实现者是谁（远程武器实例、手雷、近战）由上下文里的 `AbilitySource` 决定。远程武器的实现是按曲线取值、按材质 Tag 相乘，第 14 章展开。上下文里没有 `AbilitySource`（比如作弊命令）时两个倍率都是 1。
+这里体现 `ILyraAbilitySourceInterface`（[`LyraAbilitySourceInterface.h`](../../../Source/LyraGame/AbilitySystem/LyraAbilitySourceInterface.h)）的价值：它只有两个纯虚函数，`GetDistanceAttenuation` 和 `GetPhysicalMaterialAttenuation`，都返回倍率。Execution 不知道“武器”是什么，只知道“来源”能回答这两个问题；实现者是谁（远程武器实例、手雷、近战）由上下文里的 `AbilitySource` 决定。远程武器的实现是按曲线取值、按材质 Tag 相乘，第 14 章展开。上下文里没有 `AbilitySource`（比如作弊命令）时两个倍率都是 1。
 
 **第四段：公式与输出。**
 
@@ -246,7 +246,7 @@ Execution 唯一的输出就是这一次 `AddOutputModifier`。它不碰 `Health
 
 此刻 `Damage` 里有了一个正数，还没人动过 `Health`。假如伤害 GE 直接对 `Health` 加负数，“无敌”“GodMode”“只能被打到 1 血”“死亡只触发一次”这些规则要么每个 GE 各自处理，要么塞进一个最终钳制函数。有了 `Damage` 这个中转站，所有伤害——子弹、手雷、自杀、掉出地图——都必须经过 `ULyraHealthSet` 的同一个入口。
 
-`Source/LyraGame/AbilitySystem/Attributes/LyraHealthSet.h` 里的四个数值属性分两类：有状态的 `Health`、`MaxHealth`（复制，`REPNOTIFY_Always`；`Health` 标了 `HideFromModifiers`，普通 GE 修改器选不到它）；元属性 `Damage`（同样 `HideFromModifiers`）与 `Healing`（没有隐藏，普通 GE 可以直接给它加值），不复制，值始终回到 0。构造函数里 `Health(100.0f)`、`MaxHealth(100.0f)` 是默认初值。
+[`LyraHealthSet.h`](../../../Source/LyraGame/AbilitySystem/Attributes/LyraHealthSet.h) 里的四个数值属性分两类：有状态的 `Health`、`MaxHealth`（复制，`REPNOTIFY_Always`；`Health` 标了 `HideFromModifiers`，普通 GE 修改器选不到它）；元属性 `Damage`（同样 `HideFromModifiers`）与 `Healing`（没有隐藏，普通 GE 可以直接给它加值），不复制，值始终回到 0。构造函数里 `Health(100.0f)`、`MaxHealth(100.0f)` 是默认初值。
 
 这也给出了一条“什么对象能受伤”的明文规则，Epic 的《Abilities in Lyra》文档把它写成了要求：能掉血的 Actor 必须有**已正确初始化的 ASC**，并且 ASC 上有 `ULyraHealthSet`；`ULyraCombatSet`（基础伤害/治疗值）严格说是可选的，社区（X157）的观察是没有它日志里会报警。所以第 10 章那个挂在 Character 上的靶子（`ALyraCharacterWithAbilities`）也能受伤——它自带 ASC 和两个属性集。
 
@@ -353,7 +353,7 @@ bOutOfHealth = (CurrentHealth <= 0.0f);
 
 属性集在 PlayerState 的 ASC 上，寿命等于整场会话；“死亡”却是 Pawn 的事——停移动、关碰撞、播动画、销毁。让 Pawn 直接绑属性集的委托，每次换 Pawn 都要重绑，旧 Pawn 销毁时还要记得解绑；让属性集直接操作 Pawn，属性层就依赖了角色层，`ULyraHealthSet` 就没法用在“没有 Pawn 的东西”上（比如第 10 章的靶子之外的场景）。
 
-Lyra 的办法是在 Pawn 上放一个很薄的组件 `Source/LyraGame/Character/LyraHealthComponent.cpp`（由 `ALyraCharacter` 的构造函数创建）。它只做三件事：以 Pawn 的口吻转发属性集的委托；把“血量归零”翻译成 GAS 事件；维护一个可复制的死亡状态。
+Lyra 的办法是在 Pawn 上放一个很薄的组件 [`ULyraHealthComponent`](../../../Source/LyraGame/Character/LyraHealthComponent.cpp)（由 `ALyraCharacter` 的构造函数创建）。它只做三件事：以 Pawn 的口吻转发属性集的委托；把“血量归零”翻译成 GAS 事件；维护一个可复制的死亡状态。
 
 ### 接上 ASC
 
@@ -441,7 +441,7 @@ else if (OldDeathState == ELyraDeathState::DeathStarted && NewDeathState == ELyr
 
 ### 死亡技能：`ULyraGameplayAbility_Death`
 
-`GameplayEvent.Death` 触发的是 `Source/LyraGame/AbilitySystem/Abilities/LyraGameplayAbility_Death.cpp`，一个 C++ 基类，构造函数里直接写死触发器：
+`GameplayEvent.Death` 触发的是 [`ULyraGameplayAbility_Death`](../../../Source/LyraGame/AbilitySystem/Abilities/LyraGameplayAbility_Death.cpp)，一个 C++ 基类，构造函数里直接写死触发器：
 
 ```cpp
 // 简化自 Source/LyraGame/AbilitySystem/Abilities/LyraGameplayAbility_Death.cpp 的构造函数
@@ -478,7 +478,7 @@ Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
 ## 七、善后：`ALyraCharacter`
 
-`ALyraCharacter` 在构造函数里订阅了 HealthComponent 的两个委托（`Source/LyraGame/Character/LyraCharacter.cpp`）：
+`ALyraCharacter` 在构造函数里订阅了 HealthComponent 的两个委托（[`LyraCharacter.cpp`](../../../Source/LyraGame/Character/LyraCharacter.cpp)）：
 
 ```cpp
 // 简化自 Source/LyraGame/Character/LyraCharacter.cpp
@@ -527,7 +527,7 @@ void ALyraCharacter::UninitAndDestroy()
 
 ### C++ 里没有人调用它
 
-旧 Pawn 的故事到 `UninitAndDestroy` 讲完。新 Pawn 从哪来？`Source/LyraGame/GameModes/LyraGameMode.cpp` 提供了一个函数：
+旧 Pawn 的故事到 `UninitAndDestroy` 讲完。新 Pawn 从哪来？[`ALyraGameMode`](../../../Source/LyraGame/GameModes/LyraGameMode.cpp) 提供了一个函数：
 
 ```cpp
 // 简化自 Source/LyraGame/GameModes/LyraGameMode.cpp 的 ALyraGameMode::RequestPlayerRestartNextFrame
@@ -580,7 +580,7 @@ flowchart TD
 
 ### 作弊命令一览
 
-`Source/LyraGame/Player/LyraCheatManager.cpp` 的这组命令是调试伤害链路最好的“手柄”：
+[`ULyraCheatManager`](../../../Source/LyraGame/Player/LyraCheatManager.cpp) 的这组命令是调试伤害链路最好的“手柄”：
 
 - `DamageSelf <数值>` / `HealSelf <数值>`：用 `ULyraGameData` 里的 SetByCaller GE 对自己应用伤害/治疗，Tag 分别是 `SetByCaller.Damage`、`SetByCaller.Heal`；`DamageTarget` / `HealTarget` 同理，对象是准星指向的 Actor；
 - `DamageSelfDestruct`：调用 `HealthComponent->DamageSelfDestruct()`，带 `SelfDestruct` Tag，可穿透无敌；Pawn 到达 `GameplayReady` 才执行；

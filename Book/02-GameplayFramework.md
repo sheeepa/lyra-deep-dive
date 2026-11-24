@@ -51,7 +51,7 @@ flowchart TD
 - **关卡（`ULevel`）**：World 里的一层 Actor 集合。一个 World 有一个始终加载的持久关卡（Persistent Level），还可以按需动态加载进来若干流送子关卡（Streaming Level，把大地图拆成几块按区域流式加载）。你在编辑器里打开的 `.umap` 文件就是一个关卡。
 - **本地玩家（`ULocalPlayer`）**：属于 GameInstance，代表“这台机器上的第 N 个玩家”（分屏时有多个）。注意它**不是 Actor**。
 
-Lyra 的 `Source/LyraGame/System/LyraGameInstance.cpp` 在 `Init` 里做了一件典型的“会话级”的事：
+Lyra 的 [`LyraGameInstance.cpp`](../../../Source/LyraGame/System/LyraGameInstance.cpp) 在 `Init` 里做了一件典型的“会话级”的事：
 
 ```cpp
 // 简化自 Source/LyraGame/System/LyraGameInstance.cpp 的 ULyraGameInstance::Init
@@ -90,7 +90,7 @@ UE 把“放进世界里的东西”和“它的能力”分成两层：
 - **Actor（`AActor`）**：能被放进 Level 的实体。它有生命周期（创建、`BeginPlay`、销毁）、可以被复制到网络上、有 Owner。它本身几乎没有“能力”，是个**容器**。
 - **组件（`UActorComponent`）**：挂在 Actor 上的能力模块。比如血量、摄像机、移动、网格体，每个组件做一件事。需要在世界里有位置的组件继承自 `USceneComponent`（带变换和父子挂接），渲染相关的比如网格体、胶囊体再往下派生。
 
-这就是你已经熟悉的“组合优于继承”：能力用组件拼，而不是靠继承树叠。看 Lyra 的 `Source/LyraGame/Character/LyraCharacter.cpp`，这个构造函数在第 1 章见过：
+这就是你已经熟悉的“组合优于继承”：能力用组件拼，而不是靠继承树叠。看 Lyra 的 [`LyraCharacter.cpp`](../../../Source/LyraGame/Character/LyraCharacter.cpp)，这个构造函数在第 1 章见过：
 
 ```cpp
 // 简化自 Source/LyraGame/Character/LyraCharacter.cpp 的 ALyraCharacter::ALyraCharacter
@@ -132,7 +132,7 @@ HUD / LocalPlayer     ✗               ● 仅本机             ● 仅本机
 
 **`APawn` / `ACharacter`**：**被控制的身体**——在世界里的位置、碰撞、模型。`ACharacter` 是 `APawn` 的子类，自带胶囊体、骨骼网格体和一个行走移动组件。Pawn 会死会换，所以不适合存“跨命”的数据。
 
-**`AAIController`**：和 PlayerController 对应的**AI 版“意志”**。同一个 Pawn 类既可以被 PlayerController 控制也可以被 AIController 控制，这是 Controller 与 Pawn 拆开的原因：控制逻辑和身体可以独立替换。Lyra 的 Bot 就是这样：`Source/LyraGame/Player/LyraPlayerBotController.cpp` 继承 `AModularAIController`，在构造函数里设置 `bWantsPlayerState = true`，让 Bot 也拥有 PlayerState——这样 Bot 在队伍、记分板、技能系统里和真人玩家享受完全一样的待遇。
+**`AAIController`**：和 PlayerController 对应的**AI 版“意志”**。同一个 Pawn 类既可以被 PlayerController 控制也可以被 AIController 控制，这是 Controller 与 Pawn 拆开的原因：控制逻辑和身体可以独立替换。Lyra 的 Bot 就是这样：[`ALyraPlayerBotController`](../../../Source/LyraGame/Player/LyraPlayerBotController.cpp) 继承 `AModularAIController`，在构造函数里设置 `bWantsPlayerState = true`，让 Bot 也拥有 PlayerState——这样 Bot 在队伍、记分板、技能系统里和真人玩家享受完全一样的待遇。
 
 **`AHUD`、`ULocalPlayer`、`UGameViewportClient`**：**本机专属**的三个。`AHUD` 由 PlayerController 通过 `ClientSetHUD` 在**客户端本地**生成（服务器不会生成，也不复制），Lyra 的 HUD 基本只剩下一层薄薄的壳，真正的界面在 CommonUI 里（第 18 章）。`ULocalPlayer` 代表这台机器上的玩家本人。`UGameViewportClient` 是“画面窗口”，处理输入进入引擎的最前端，专用服务器上不存在。
 
@@ -142,9 +142,9 @@ HUD / LocalPlayer     ✗               ● 仅本机             ● 仅本机
 
 1. **剩余时间** → 放 GameState，所有人都需要看到同一份；
 2. **击杀数** → 放 PlayerState，所有人都需要看到，而且不随 Pawn 死亡丢失；
-3. **灵敏度** → 只有本机玩家本人需要，不需要任何网络同步，放在本地的 LocalPlayer 或 PlayerController 一侧。Lyra 把玩家的共享设置挂在 `ULyraLocalPlayer` 上（`Source/LyraGame/Player/LyraLocalPlayer.cpp` 的 `GetSharedSettings`），第 20 章详讲。
+3. **灵敏度** → 只有本机玩家本人需要，不需要任何网络同步，放在本地的 LocalPlayer 或 PlayerController 一侧。Lyra 把玩家的共享设置挂在 `ULyraLocalPlayer` 上（[`LyraLocalPlayer.cpp`](../../../Source/LyraGame/Player/LyraLocalPlayer.cpp) 的 `GetSharedSettings`），第 20 章详讲。
 
-用 Lyra 自己的代码验证一下这个分配。看 `Source/LyraGame/Player/LyraPlayerState.h` 里存了什么：
+用 Lyra 自己的代码验证一下这个分配。看 [`LyraPlayerState.h`](../../../Source/LyraGame/Player/LyraPlayerState.h) 里存了什么：
 
 ```cpp
 // 简化自 Source/LyraGame/Player/LyraPlayerState.h 的 ALyraPlayerState
@@ -161,7 +161,7 @@ UPROPERTY(Replicated)
 FGameplayTagStackContainer StatTags;                // 可计数的 Tag（击杀数之类的统计）
 ```
 
-PawnData、技能、队伍、统计，全是“属于玩家、跨命存在、别人也要看”的数据。这就是 Lyra 把能力系统组件（ASC，管理技能、属性和状态标签的组件，第 9 章讲）放在 PlayerState 而不是 Pawn 上的根本原因——Pawn 一死，技能就没了的话，冷却、已获得的升级都会丢。而 `Source/LyraGame/GameModes/LyraGameState.h` 里存的是 `ULyraExperienceManagerComponent`（当前玩法，全局）和一个“全局用”的 ASC。
+PawnData、技能、队伍、统计，全是“属于玩家、跨命存在、别人也要看”的数据。这就是 Lyra 把能力系统组件（ASC，管理技能、属性和状态标签的组件，第 9 章讲）放在 PlayerState 而不是 Pawn 上的根本原因——Pawn 一死，技能就没了的话，冷却、已获得的升级都会丢。而 [`LyraGameState.h`](../../../Source/LyraGame/GameModes/LyraGameState.h) 里存的是 `ULyraExperienceManagerComponent`（当前玩法，全局）和一个“全局用”的 ASC。
 
 ### 官方的通用建议，和 Lyra 的具体取舍
 
@@ -171,7 +171,7 @@ Epic 的 Gameplay Framework 文档把这几个岗位的职责说得很明确（�
 
 ### 附身（Possession）
 
-Controller 和 Pawn 是分开的两个对象，它们之间通过**附身（Possess）**绑定：`Controller->Possess(Pawn)`。绑定后，Controller 的输入驱动 Pawn，Pawn 的 `GetController()` 返回它。附身发生在服务器上，会触发两个回调：Controller 端的 `OnPossess` 和 Pawn 端的 `PossessedBy`（这也是 Pawn 的 Owner 被设为 Controller 的时机，第 3 章讲 Owner 与 RPC 路由时会用到）。Lyra 在 `Source/LyraGame/Player/LyraPlayerController.cpp` 的 `OnPossess` 里做了点编辑器专用的事（执行开发者设置里配置的作弊命令）和重置自动跑状态，它是附身流程的一个钩子，不是核心逻辑。
+Controller 和 Pawn 是分开的两个对象，它们之间通过**附身（Possess）**绑定：`Controller->Possess(Pawn)`。绑定后，Controller 的输入驱动 Pawn，Pawn 的 `GetController()` 返回它。附身发生在服务器上，会触发两个回调：Controller 端的 `OnPossess` 和 Pawn 端的 `PossessedBy`（这也是 Pawn 的 Owner 被设为 Controller 的时机，第 3 章讲 Owner 与 RPC 路由时会用到）。Lyra 在 [`LyraPlayerController.cpp`](../../../Source/LyraGame/Player/LyraPlayerController.cpp) 的 `OnPossess` 里做了点编辑器专用的事（执行开发者设置里配置的作弊命令）和重置自动跑状态，它是附身流程的一个钩子，不是核心逻辑。
 
 ---
 
@@ -201,7 +201,7 @@ flowchart TD
 
 **① 构造函数**：第 1 章讲过，首先是为 CDO 跑的，此时没有 World。里面只设默认值和创建默认子对象。
 
-**② `OnRegister`**：组件被注册进 World 时调用。组件的 Owner 已经确定。适合做“依赖 Owner、但不依赖其他 Actor”的初始化。Lyra 的例子是 `Source/LyraGame/Camera/LyraCameraComponent.cpp`：
+**② `OnRegister`**：组件被注册进 World 时调用。组件的 Owner 已经确定。适合做“依赖 Owner、但不依赖其他 Actor”的初始化。Lyra 的例子是 [`LyraCameraComponent.cpp`](../../../Source/LyraGame/Camera/LyraCameraComponent.cpp)：
 
 ```cpp
 // 简化自 Source/LyraGame/Camera/LyraCameraComponent.cpp 的 ULyraCameraComponent::OnRegister
@@ -217,7 +217,7 @@ void ULyraCameraComponent::OnRegister()
 }
 ```
 
-**④⑥ `PreInitializeComponents` / `PostInitializeComponents`**：Actor 的所有组件都已创建注册，**但还没有 `BeginPlay`**。Lyra 利用 `PreInitializeComponents` 做一件很关键的事：把自己登记为“组件接收者”，这样第 7 章讲的注入机制才能找到它。看 `Plugins/ModularGameplayActors/Source/ModularGameplayActors/Private/ModularGameState.cpp`（`ModularGameplayActors` 插件里的 Lyra 基类，`ALyraGameState` 继承自它）：
+**④⑥ `PreInitializeComponents` / `PostInitializeComponents`**：Actor 的所有组件都已创建注册，**但还没有 `BeginPlay`**。Lyra 利用 `PreInitializeComponents` 做一件很关键的事：把自己登记为“组件接收者”，这样第 7 章讲的注入机制才能找到它。看 [`ModularGameState.cpp`](../../../Plugins/ModularGameplayActors/Source/ModularGameplayActors/Private/ModularGameState.cpp)（`ModularGameplayActors` 插件里的 Lyra 基类，`ALyraGameState` 继承自它）：
 
 ```cpp
 // 简化自 Plugins/ModularGameplayActors/Source/ModularGameplayActors/Private/ModularGameState.cpp
@@ -251,7 +251,7 @@ void AModularGameStateBase::BeginPlay()
 - 在客户端上，被复制出来的 Actor 要等**初始属性复制到达之后**才会 `BeginPlay`（引擎在 `PostActorConstruction` 里对动态复制的 Actor 推迟 `BeginPlay`），而各个 Actor 到达客户端的先后取决于网络；
 - 所以在服务器上“此刻一定存在”的对象，在客户端上同一时刻可能还没到。
 
-Lyra 里有一个现成的证据，在 `Source/LyraGame/Player/LyraPlayerController.cpp` 的 `OnRep_PlayerState` 里，开发者专门写了一大段注释：
+Lyra 里有一个现成的证据，在 [`LyraPlayerController.cpp`](../../../Source/LyraGame/Player/LyraPlayerController.cpp) 的 `OnRep_PlayerState` 里，开发者专门写了一大段注释：
 
 ```cpp
 // 简化自 Source/LyraGame/Player/LyraPlayerController.cpp 的 ALyraPlayerController::OnRep_PlayerState
@@ -477,7 +477,7 @@ if (ensure(TeamSubsystem))
 
 伤害计算时问队伍子系统“能不能伤害”，既没有全局变量，也不用到处传引用。PIE 里每个 World 各有一份 `ULyraTeamSubsystem`，互不串扰。
 
-`UGameplayMessageSubsystem`（`GameplayMessageRouter` 插件）是 GameInstance 级别，它提供了一个静态便捷函数 `Get(WorldContextObject)`：你传任何一个“属于某个 World 的对象”（比如 `this`），它自己顺着 World 找到 GameInstance 再取出子系统。这个 `WorldContextObject` 参数是 UE 里的常见模式。Lyra 的 `Source/LyraGame/Equipment/LyraQuickBarComponent.cpp` 里就是 `UGameplayMessageSubsystem::Get(this).BroadcastMessage(...)`，消息系统第 15 章详讲。
+`UGameplayMessageSubsystem`（`GameplayMessageRouter` 插件）是 GameInstance 级别，它提供了一个静态便捷函数 `Get(WorldContextObject)`：你传任何一个“属于某个 World 的对象”（比如 `this`），它自己顺着 World 找到 GameInstance 再取出子系统。这个 `WorldContextObject` 参数是 UE 里的常见模式。Lyra 的 [`LyraQuickBarComponent.cpp`](../../../Source/LyraGame/Equipment/LyraQuickBarComponent.cpp) 里就是 `UGameplayMessageSubsystem::Get(this).BroadcastMessage(...)`，消息系统第 15 章详讲。
 
 子系统的生命周期钩子很简单：`ShouldCreateSubsystem`（返回 false 可以拒绝创建）、`Initialize`、`Deinitialize`。`UWorldSubsystem` 默认只在 Game、Editor、PIE 这三种 World 里创建。`ULyraTeamSubsystem::Initialize` 里向作弊管理器注册了队伍相关的作弊命令扩展，`Deinitialize` 里对称地注销——谁注册谁注销，是子系统里的标准写法。
 
@@ -541,7 +541,7 @@ void ALyraCharacter::OnDeathFinished(AActor*)
 
 ### UE 的做法
 
-引擎在需要创建这些对象的地方，**不是写死 `NewObject<ULocalPlayer>`，而是读一个配置项，里面写着类路径**，再用这个类创建对象。你只要在项目的 `Config/DefaultEngine.ini` 里改这几个路径，就换了零件。这是依赖注入的一种朴素形式（配置驱动的工厂）。Lyra 的 `Config/DefaultEngine.ini` 里相关的两段：
+引擎在需要创建这些对象的地方，**不是写死 `NewObject<ULocalPlayer>`，而是读一个配置项，里面写着类路径**，再用这个类创建对象。你只要在项目的 `Config/DefaultEngine.ini` 里改这几个路径，就换了零件。这是依赖注入的一种朴素形式（配置驱动的工厂）。Lyra 的 [`DefaultEngine.ini`](../../../Config/DefaultEngine.ini) 里相关的两段：
 
 ```ini
 [/Script/Engine.Engine]
@@ -680,7 +680,7 @@ UE_LOG(LogLyra, Warning, TEXT("[Exist] HUD           %s netmode=%d"), *GetNameSa
 
 **步骤**：
 
-1. 在 IDE 里打开 `Source/LyraGame/GameModes/LyraGameMode.cpp`，在 `ALyraGameMode::SpawnDefaultPawnAtTransform_Implementation` 的第一行下断点。
+1. 在 IDE 里打开 [`LyraGameMode.cpp`](../../../Source/LyraGame/GameModes/LyraGameMode.cpp)，在 `ALyraGameMode::SpawnDefaultPawnAtTransform_Implementation` 的第一行下断点。
 2. 以“附加到编辑器”的方式调试（操作见第 0 章），在编辑器里运行 PIE，网络模式选单机（Play Standalone）。
 3. 命中断点后，打开调用栈窗口，读栈。
 4. 继续运行，如果又命中了，对比第二次的调用栈。

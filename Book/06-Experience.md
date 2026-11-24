@@ -118,38 +118,30 @@ Lyra 明确禁止这么做。在 `ULyraExperienceDefinition::IsDataValid` 里，
 ```cpp
 // 简化自 Source/LyraGame/GameModes/LyraGameMode.cpp 的 ALyraGameMode::HandleMatchAssignmentIfNotExpectingOne
 FPrimaryAssetId ExperienceId;
-
 // ① 地图 URL 里的选项，例如 open L_Expanse?Experience=B_ShooterGame_Elimination
 if (!ExperienceId.IsValid() && UGameplayStatics::HasOption(OptionsString, TEXT("Experience")))
 {
     const FString Name = UGameplayStatics::ParseOption(OptionsString, TEXT("Experience"));
-    // 类型固定为 LyraExperienceDefinition，名字就是资产名
     ExperienceId = FPrimaryAssetId(FPrimaryAssetType(ULyraExperienceDefinition::StaticClass()->GetFName()), FName(*Name));
 }
-
 // ② 编辑器里的开发者设置（只在 PIE 中生效）
 if (!ExperienceId.IsValid() && World->IsPlayInEditor())
 {
     ExperienceId = GetDefault<ULyraDeveloperSettings>()->ExperienceOverride;
 }
-
-// ③ 命令行参数 -Experience=xxx
-// ④ 地图 World Settings 里的 DefaultGameplayExperience
-// （代码结构相同，此处省略）
+// ③ 命令行参数 -Experience=xxx ；④ 地图 World Settings 的 DefaultGameplayExperience（结构相同，此处略）
 
 // 找到了 ID，但 AssetManager 里查不到这个资产 → 打错误日志，当作没找到
 if (ExperienceId.IsValid() && !AssetManager.GetPrimaryAssetData(ExperienceId, Dummy))
 {
     ExperienceId = FPrimaryAssetId();
 }
-
 // ⑤ 都没有：专用服务器走登录流程；否则用硬编码的默认 Experience
 if (!ExperienceId.IsValid())
 {
     if (TryDedicatedServerLogin()) { return; }
     ExperienceId = FPrimaryAssetId(FPrimaryAssetType("LyraExperienceDefinition"), FName("B_LyraDefaultExperience"));
 }
-
 OnMatchAssignmentGiven(ExperienceId, ExperienceIdSource);
 ```
 
@@ -436,7 +428,7 @@ sequenceDiagram
     Waiters->>GM: OnExperienceLoaded → RestartPlayer
 ```
 
-对照第 5 章的 12 步主干，本章讲的是第 3~7 步。第 7 章讲 Action 是怎么把组件“注入”到 Actor 上的，第 8 章讲第 8~10 步 Pawn 出生和初始化。
+对照第 5 章的 12 步主干，本章讲的是第 3-7 步。第 7 章讲 Action 是怎么把组件“注入”到 Actor 上的，第 8 章讲第 8-10 步 Pawn 出生和初始化。
 
 ## 动手实验
 

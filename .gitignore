@@ -1,0 +1,8 @@
+# 暂不上传到公开仓库的内容（后续准备就绪后可取消对应行的忽略）
+CentralPointWorkshop/
+Workshop/
+Learning/
+
+# 内部编撰过程与历史备份归档（不对外发布）
+_Process/
+Book/_Editorial/

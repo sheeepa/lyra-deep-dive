@@ -35,7 +35,7 @@
 
 它还带着一套“应用”逻辑：`ApplySettings()` 会把挂起的分辨率变更真正应用到窗口，调用 `ApplyNonResolutionSettings()` 处理其余项，最后 `SaveSettings()` 写盘；`ConfirmVideoMode`/`RevertVideoMode` 配合“15 秒内确认，否则回滚分辨率”这类流程。（以上是引擎类的行为，本书不展开源码。）
 
-项目可以用子类替换它。Lyra 在 `Config/DefaultEngine.ini` 的 `[/Script/Engine.Engine]` 里写了 `GameUserSettingsClassName=/Script/LyraGame.LyraSettingsLocal`，引擎就会实例化这个子类。这是第 4 章讲过的“ini 里指定类名”的又一个用例。
+项目可以用子类替换它。Lyra 在 [`Config/DefaultEngine.ini`](../../../Config/DefaultEngine.ini) 的 `[/Script/Engine.Engine]` 里写了 `GameUserSettingsClassName=/Script/LyraGame.LyraSettingsLocal`，引擎就会实例化这个子类。这是第 4 章讲过的“ini 里指定类名”的又一个用例。
 
 ### USaveGame 与 ULocalPlayerSaveGame
 
@@ -72,7 +72,7 @@ flowchart LR
 
 ### 放哪边：一条判断规则
 
-`Source/LyraGame/Settings/LyraSettingsShared.h` 的类注释把规则写得很清楚：Shared 设置**不依赖机器**，可以放云端，按玩家存储，比如手柄键位偏好——因为放进本地设置的话，同一台机器上所有用户会共用。
+[`LyraSettingsShared.h`](../../../Source/LyraGame/Settings/LyraSettingsShared.h) 的类注释把规则写得很清楚：Shared 设置**不依赖机器**，可以放云端，按玩家存储，比如手柄键位偏好——因为放进本地设置的话，同一台机器上所有用户会共用。
 
 实际用起来就是一个问题：**这个值换一台电脑还有意义吗？** 分辨率、画质档位、帧率上限、音量、音频输出设备、HDR、性能统计显示列表，换了机器就没意义，放 Local。灵敏度、反转轴、死区、震动、字幕样式、色盲模式、键位、语言偏好，跟着人走，放 Shared。
 
@@ -94,7 +94,7 @@ if (FInternationalization::Get().SetCurrentCulture(CultureToApply))
 
 ### Local 这一半：就是一个带 Config 属性的 UGameUserSettings
 
-`ULyraSettingsLocal` 的写法没什么新鲜的：重写几个虚函数（`SetToDefaults`、`LoadSettings`、`ApplyNonResolutionSettings` 等，见 `Source/LyraGame/Settings/LyraSettingsLocal.h`），再声明一批 `UPROPERTY(Config)` 属性和对应的 getter/setter。打开你工程里的 `Saved/Config/WindowsEditor/GameUserSettings.ini`，能看到 `[/Script/LyraGame.LyraSettingsLocal]` 一节：`OverallVolume`、`FrameRateLimit_InMenu`、`bUseHeadphoneMode`、`ResolutionSizeX` ……你在设置界面里改的 Local 项，最终都落在这里。
+`ULyraSettingsLocal` 的写法没什么新鲜的：重写几个虚函数（`SetToDefaults`、`LoadSettings`、`ApplyNonResolutionSettings` 等，见 [`LyraSettingsLocal.h`](../../../Source/LyraGame/Settings/LyraSettingsLocal.h)），再声明一批 `UPROPERTY(Config)` 属性和对应的 getter/setter。打开你工程里的 `Saved/Config/WindowsEditor/GameUserSettings.ini`，能看到 `[/Script/LyraGame.LyraSettingsLocal]` 一节：`OverallVolume`、`FrameRateLimit_InMenu`、`bUseHeadphoneMode`、`ResolutionSizeX` ……你在设置界面里改的 Local 项，最终都落在这里。
 
 注意 getter/setter 前面几乎都标了 `UFUNCTION()`，例如 `UFUNCTION() float GetDisplayGamma() const;`。这不是为了蓝图，而是为了下一节要讲的动态路径——它只认反射里能找到的函数。
 
@@ -195,7 +195,7 @@ flowchart TB
 
 ### 一个设置长什么样
 
-先看 Lyra 里一个真实的设置项，鼠标 X 轴灵敏度（`Source/LyraGame/Settings/LyraGameSettingRegistry_MouseAndKeyboard.cpp`）：
+先看 Lyra 里一个真实的设置项，鼠标 X 轴灵敏度（[`LyraGameSettingRegistry_MouseAndKeyboard.cpp`](../../../Source/LyraGame/Settings/LyraGameSettingRegistry_MouseAndKeyboard.cpp)）：
 
 ```cpp
 // 简化自 ULyraGameSettingRegistry::InitializeMouseAndKeyboardSettings
@@ -231,7 +231,7 @@ Sensitivity->AddSetting(Setting);                                            // 
 
 ## 动态路径：一个宏，一次反射
 
-上面代码里最关键的一行是 `GET_SHARED_SETTINGS_FUNCTION_PATH(GetMouseSensitivityX)`。它的定义在 `Source/LyraGame/Settings/LyraGameSettingRegistry.h`：
+上面代码里最关键的一行是 `GET_SHARED_SETTINGS_FUNCTION_PATH(GetMouseSensitivityX)`。它的定义在 [`LyraGameSettingRegistry.h`](../../../Source/LyraGame/Settings/LyraGameSettingRegistry.h)：
 
 ```cpp
 // 摘自 Source/LyraGame/Settings/LyraGameSettingRegistry.h
@@ -301,7 +301,7 @@ Lyra 的做法是：设置始终创建，附加若干**编辑条件**（`FGameSe
 | `Hide(开发者原因)` | 不可见 |
 | `Kill(开发者原因)` | 隐藏，且不参与“重置全部”，也不上报分析数据 |
 
-分辨率设置的写法最能说明问题（`Source/LyraGame/Settings/LyraGameSettingRegistry_Video.cpp`）：
+分辨率设置的写法最能说明问题（[`LyraGameSettingRegistry_Video.cpp`](../../../Source/LyraGame/Settings/LyraGameSettingRegistry_Video.cpp)）：
 
 ```cpp
 // 简化自 ULyraGameSettingRegistry::InitializeVideoSettings
@@ -321,7 +321,7 @@ Setting->AddEditCondition(MakeShared<FWhenCondition>(
 
 三件事：平台能力用 **Trait 标签**判断（`FWhenPlatformHasTrait`）；设置间的联动用 **`AddEditDependency`** 声明；临时的、自定义的逻辑用 **`FWhenCondition`** 包一个 lambda。
 
-Trait 标签从哪来？来自 `Config/<平台>/<平台>Game.ini` 的 `[/Script/CommonUI.CommonUISettings]` 里的 `PlatformTraits`。打开 `Config/Windows/WindowsGame.ini`，你能看到 `Platform.Trait.SupportsWindowedMode`、`Platform.Trait.ReplaySupport` 等一串。**新平台只需要改 ini 给自己声明有哪些能力，不需要改设置代码。** 这又是第 4 章讲的“系统之间靠 GameplayTag 约定连接”。
+Trait 标签从哪来？来自 `Config/<平台>/<平台>Game.ini` 的 `[/Script/CommonUI.CommonUISettings]` 里的 `PlatformTraits`。打开 [`Config/Windows/WindowsGame.ini`](../../../Config/Windows/WindowsGame.ini)，你能看到 `Platform.Trait.SupportsWindowedMode`、`Platform.Trait.ReplaySupport` 等一串。**新平台只需要改 ini 给自己声明有哪些能力，不需要改设置代码。** 这又是第 4 章讲的“系统之间靠 GameplayTag 约定连接”。
 
 依赖的实现很短：`AddEditDependency(Other)` 就是订阅 `Other` 的变化事件，变化时本设置重新 `RefreshEditableState`，并（如果变化原因不是依赖）再广播一次自己变了。画质预设（Low/Medium/High/Epic/Custom）与阴影、全局光照、后处理各个子项之间的互相依赖，就是这样声明出来的：任何一个子项变化，预设项重新计算——如果各子项档位不一致，预设就显示成“Custom”。
 
@@ -354,7 +354,7 @@ sequenceDiagram
     end
 ```
 
-追踪器本身非常简单，核心就是这两个函数（`Plugins/GameSettings/Source/Private/Registry/GameSettingRegistryChangeTracker.cpp`）：
+追踪器本身非常简单，核心就是这两个函数（[`GameSettingRegistryChangeTracker.cpp`](../../../Plugins/GameSettings/Source/Private/Registry/GameSettingRegistryChangeTracker.cpp)）：
 
 ```cpp
 // 简化自 FGameSettingRegistryChangeTracker
@@ -410,7 +410,7 @@ if (ULyraLocalPlayer* LocalPlayer = Cast<ULyraLocalPlayer>(OwningLocalPlayer))
 
 ### 分辨率：把“撤销”交还给引擎
 
-`ULyraSettingValueDiscrete_Resolution`（源码（`Source/LyraGame/Settings/CustomSettings/LyraSettingValueDiscrete_Resolution.cpp`））的选项列表来自 RHI 查询到的显示器可用分辨率，并且要随窗口模式和显示器而变，用 getter/setter 的字符串路径表达不了。更有意思的是它的三个回滚函数：
+`ULyraSettingValueDiscrete_Resolution`（[源码](../../../Source/LyraGame/Settings/CustomSettings/LyraSettingValueDiscrete_Resolution.cpp)）的选项列表来自 RHI 查询到的显示器可用分辨率，并且要随窗口模式和显示器而变，用 getter/setter 的字符串路径表达不了。更有意思的是它的三个回滚函数：
 
 ```cpp
 // 简化自 ULyraSettingValueDiscrete_Resolution
@@ -542,7 +542,7 @@ GamepadSettings = InitializeGamepadSettings(LyraLocalPlayer);             Regist
 
 **步骤**：
 
-1. 打开 `Source/LyraGame/Settings/LyraSettingsShared.h`，找到 `GetInvertVerticalAxis` 上面的 `UFUNCTION()`，把它注释掉，编译。
+1. 打开 [`LyraSettingsShared.h`](../../../Source/LyraGame/Settings/LyraSettingsShared.h)，找到 `GetInvertVerticalAxis` 上面的 `UFUNCTION()`，把它注释掉，编译。
 2. 运行 PIE，打开设置的鼠标键盘页，同时打开输出日志，过滤 `did not resolve`。
 
 **先写下你的预测**：能编译通过吗？设置页上“Invert Vertical Axis”这一项长什么样？日志里会看到什么？
@@ -598,7 +598,7 @@ private:
 
 ### 第 2 步：在注册表里声明设置项
 
-打开 `Source/LyraGame/Settings/LyraGameSettingRegistry_Gameplay.cpp`，在 `InitializeGameplaySettings` 里 Replay 小节之前加一个“Camera”小节。先补包含文件：
+打开 [`LyraGameSettingRegistry_Gameplay.cpp`](../../../Source/LyraGame/Settings/LyraGameSettingRegistry_Gameplay.cpp)，在 `InitializeGameplaySettings` 里 Replay 小节之前加一个“Camera”小节。先补包含文件：
 
 ```cpp
 #include "GameSettingValueScalarDynamic.h"

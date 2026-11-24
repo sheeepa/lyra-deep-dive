@@ -106,13 +106,13 @@ virtual TOptional<FUIInputConfig> GetDesiredInputConfig() const;
 
 同时它也负责把按键事件派发给最上层控件的 UI 动作绑定。还要注意：栈顶变化时，路由器是**重新计算**新的最里层节点的配置并应用，而不是维护一个“配置栈”然后弹出。
 
-这里还有两个重要的前置条件。第一，**视口类必须是 `UCommonGameViewportClient`**：CommonUI 靠它截获输入再交给路由器（官方 Quickstart 要求把项目设置里的 Game Viewport Client Class 设成它）。Lyra 的 `Config/DefaultEngine.ini` 里设的是 `GameViewportClientClassName=/Script/LyraGame.LyraGameViewportClient`，也就是 `Source/LyraGame/UI/LyraGameViewportClient.h`，它继承自 `UCommonGameViewportClient`，所以满足要求；你自己的项目若换了视口类，要保证它仍然继承自 `UCommonGameViewportClient`。第二，**控件必须是通过 CommonUI 的容器加进来的，才会被路由器看到**。一个直接 `AddToViewport` 的普通控件，路由器不认识它——所以它既不会触发输入配置的切换，也不会享受动作绑定。这是新手最常踩的坑，本章末尾“常见误区”里会再提。
+这里还有两个重要的前置条件。第一，**视口类必须是 `UCommonGameViewportClient`**：CommonUI 靠它截获输入再交给路由器（官方 Quickstart 要求把项目设置里的 Game Viewport Client Class 设成它）。Lyra 的 [`DefaultEngine.ini`](../../../Config/DefaultEngine.ini) 里设的是 `GameViewportClientClassName=/Script/LyraGame.LyraGameViewportClient`，也就是 [`ULyraGameViewportClient`](../../../Source/LyraGame/UI/LyraGameViewportClient.h)，它继承自 `UCommonGameViewportClient`，所以满足要求；你自己的项目若换了视口类，要保证它仍然继承自 `UCommonGameViewportClient`。第二，**控件必须是通过 CommonUI 的容器加进来的，才会被路由器看到**。一个直接 `AddToViewport` 的普通控件，路由器不认识它——所以它既不会触发输入配置的切换，也不会享受动作绑定。这是新手最常踩的坑，本章末尾“常见误区”里会再提。
 
 社区里还有一条经验：在 CommonUI 项目里不要再手动调用 `SetInputMode`，它会和路由器争夺输入模式，把 CommonUI 搞乱。
 
 ### 配套：UI 动作与 CommonInput
 
-“UI 动作”（UI Action）是 CommonUI 对“语义化按键”的抽象。比如“返回”这个动作，在键盘上可能映射成 Esc，在 Xbox 手柄上映射成 B 键。动作用一个 GameplayTag 标识，映射表在项目的 CommonUI 配置里。打开 `Config/DefaultInput.ini` 能看到 Lyra 自己加了一个：
+“UI 动作”（UI Action）是 CommonUI 对“语义化按键”的抽象。比如“返回”这个动作，在键盘上可能映射成 Esc，在 Xbox 手柄上映射成 B 键。动作用一个 GameplayTag 标识，映射表在项目的 CommonUI 配置里。打开 [`Config/DefaultInput.ini`](../../../Config/DefaultInput.ini) 能看到 Lyra 自己加了一个：
 
 ```ini
 [/Script/CommonUI.CommonUIInputSettings]
@@ -122,7 +122,7 @@ UIActionProcessingPriority=10000
 
 `UI.Action.Escape` 同时映射到键盘 Esc 和手柄的特殊右键（Start/Menu 键）。另一条 `UIActionProcessingPriority=10000` 设置了 UI 动作处理的优先级，Lyra 把它调得很高，意味着 UI 的按键绑定比游戏自己的输入先处理。
 
-“默认的点击和返回动作”则在 `Config/DefaultGame.ini` 的 `[/Script/CommonInput.CommonInputSettings]` 里通过 `InputData=/Game/UI/B_CommonInputData.B_CommonInputData_C` 指向一个蓝图资产，里面有 Default Click / Default Back 两行数据表引用。Lyra 的 C++ 里通过 `ICommonInputModule::GetSettings().GetDefaultClickAction()` 之类的函数读取它们（后面确认框那一节就会用到）。
+“默认的点击和返回动作”则在 [`Config/DefaultGame.ini`](../../../Config/DefaultGame.ini) 的 `[/Script/CommonInput.CommonInputSettings]` 里通过 `InputData=/Game/UI/B_CommonInputData.B_CommonInputData_C` 指向一个蓝图资产，里面有 Default Click / Default Back 两行数据表引用。Lyra 的 C++ 里通过 `ICommonInputModule::GetSettings().GetDefaultClickAction()` 之类的函数读取它们（后面确认框那一节就会用到）。
 
 最后是 CommonInput（输入类型切换）。CommonUI 会判断玩家“此刻正在用什么设备”：`ECommonInputType` 有 `MouseAndKeyboard`、`Gamepad`、`Touch` 三种，玩家一碰手柄摇杆就切到 Gamepad，一动鼠标又切回键鼠。Lyra 的 CommonGame 插件把它封装成了蓝图可用的函数：
 
@@ -138,7 +138,7 @@ ECommonInputType UCommonUIExtensions::GetOwningPlayerInputType(const UUserWidget
 }
 ```
 
-按钮上显示“Esc”还是“B”，就是根据这个类型决定。Lyra 的 `ULyraActionWidget::GetIcon`（`Source/LyraGame/UI/Foundation/LyraActionWidget.cpp`）更进一步，会按 EnhancedInput 里玩家实际的重绑定键来取图标。
+按钮上显示“Esc”还是“B”，就是根据这个类型决定。Lyra 的 `ULyraActionWidget::GetIcon`（[`LyraActionWidget.cpp`](../../../Source/LyraGame/UI/Foundation/LyraActionWidget.cpp)）更进一步，会按 EnhancedInput 里玩家实际的重绑定键来取图标。
 
 ## Lyra 怎么把它们组装起来：CommonGame 插件
 
@@ -159,7 +159,7 @@ flowchart TD
 
 ### 管理器子系统：为什么基类是 Abstract
 
-`UGameUIManagerSubsystem` 是 GameInstance 子系统（第 2 章讲过子系统：随 GameInstance 创建、销毁的单例）。它在 CommonGame 里是 `Abstract` 的，注释写明“这个管理器是要被你的游戏替换的”。Lyra 的替换者是 `Source/LyraGame/UI/Subsystem/LyraUIManagerSubsystem.h`。基类里的 `ShouldCreateSubsystem` 有一个值得细读的写法：
+`UGameUIManagerSubsystem` 是 GameInstance 子系统（第 2 章讲过子系统：随 GameInstance 创建、销毁的单例）。它在 CommonGame 里是 `Abstract` 的，注释写明“这个管理器是要被你的游戏替换的”。Lyra 的替换者是 [`ULyraUIManagerSubsystem`](../../../Source/LyraGame/UI/Subsystem/LyraUIManagerSubsystem.h)。基类里的 `ShouldCreateSubsystem` 有一个值得细读的写法：
 
 ```cpp
 // 简化自 Plugins/CommonGame/Source/Private/GameUIManagerSubsystem.cpp
@@ -293,7 +293,7 @@ void UPrimaryGameLayout::RegisterLayer(FGameplayTag LayerTag, UCommonActivatable
 }
 ```
 
-在编辑器里打开 `Content/UI/W_OverallUILayout`，你会看到 `MainOverlay` 里按从底到顶的顺序叠放着四个 `Common Activatable Widget Stack`（变量名依次为 `GameLayer_Stack`、`GameMenu_Stack`、`Menu_Stack`、`Modal_Stack`），在蓝图的 `Construct` 事件里分别用四个 Tag 调用 `RegisterLayer`。Tag 来自 `Config/DefaultGameplayTags.ini`：
+在编辑器里打开 `Content/UI/W_OverallUILayout`，你会看到 `MainOverlay` 里按从底到顶的顺序叠放着四个 `Common Activatable Widget Stack`（变量名依次为 `GameLayer_Stack`、`GameMenu_Stack`、`Menu_Stack`、`Modal_Stack`），在蓝图的 `Construct` 事件里分别用四个 Tag 调用 `RegisterLayer`。Tag 来自 [`Config/DefaultGameplayTags.ini`](../../../Config/DefaultGameplayTags.ini)：
 
 | Tag | 放什么 |
 |---|---|
@@ -310,7 +310,7 @@ void UPrimaryGameLayout::RegisterLayer(FGameplayTag LayerTag, UCommonActivatable
 
 ### push 与 pop：怎么把控件放上去
 
-面向使用者的入口都在 `UCommonUIExtensions`（一个蓝图函数库，`Plugins/CommonGame/Source/Private/CommonUIExtensions.cpp`）。同步版本：
+面向使用者的入口都在 `UCommonUIExtensions`（一个蓝图函数库，[`CommonUIExtensions.cpp`](../../../Plugins/CommonGame/Source/Private/CommonUIExtensions.cpp)）。同步版本：
 
 ```cpp
 // 简化自 CommonUIExtensions.cpp 的 UCommonUIExtensions::PushContentToLayer_ForPlayer
@@ -357,7 +357,7 @@ pop 有两种：控件自己调 `DeactivateWidget()`，或者外部调 `UCommonU
 
 ## ULyraActivatableWidget：输入配置怎么落地
 
-现在回到想法三，看 Lyra 怎么表态。所有 Lyra 自己的“屏幕”控件都继承自 `Source/LyraGame/UI/LyraActivatableWidget.h`，它的全部关键逻辑只有一个函数：
+现在回到想法三，看 Lyra 怎么表态。所有 Lyra 自己的“屏幕”控件都继承自 [`ULyraActivatableWidget`](../../../Source/LyraGame/UI/LyraActivatableWidget.h)，它的全部关键逻辑只有一个函数：
 
 ```cpp
 // 简化自 Source/LyraGame/UI/LyraActivatableWidget.cpp
@@ -399,7 +399,7 @@ TOptional<FUIInputConfig> ULyraActivatableWidget::GetDesiredInputConfig() const
 
 ## ESC 菜单：串起整条链
 
-现在把前面所有零件串起来，看“按 ESC 弹出暂停菜单”到底发生了什么。起点是 HUD 布局的基类 `Source/LyraGame/UI/LyraHUDLayout.h`。它继承 `ULyraActivatableWidget`，在初始化时注册一个 UI 动作绑定：
+现在把前面所有零件串起来，看“按 ESC 弹出暂停菜单”到底发生了什么。起点是 HUD 布局的基类 [`ULyraHUDLayout`](../../../Source/LyraGame/UI/LyraHUDLayout.h)。它继承 `ULyraActivatableWidget`，在初始化时注册一个 UI 动作绑定：
 
 ```cpp
 // 简化自 Source/LyraGame/UI/LyraHUDLayout.cpp
@@ -477,7 +477,7 @@ virtual void ShowConfirmation(UCommonGameDialogDescriptor* DialogDescriptor, FCo
 virtual void ShowError(UCommonGameDialogDescriptor* DialogDescriptor, FCommonMessagingResultDelegate ResultCallback = ...);
 ```
 
-基类的这两个函数是空实现，和 UI 管理器一样是“让位”模式——只要有子类，基类不创建。Lyra 的子类是 `Source/LyraGame/UI/Subsystem/LyraUIMessaging.cpp`：
+基类的这两个函数是空实现，和 UI 管理器一样是“让位”模式——只要有子类，基类不创建。Lyra 的子类是 [`ULyraUIMessaging`](../../../Source/LyraGame/UI/Subsystem/LyraUIMessaging.cpp)：
 
 ```cpp
 // 简化自 Source/LyraGame/UI/Subsystem/LyraUIMessaging.cpp
@@ -566,7 +566,7 @@ if (UCommonMessagingSubsystem* Msg = LocalPlayer->GetSubsystem<UCommonMessagingS
 
 最后一块拼图是游戏启动后的“前端”：从 Press Start 画面到主菜单。它和前面的内容有关系，是因为：前端自己也只是一个 Experience（`B_LyraFrontEnd_Experience`，在 `Content/System/FrontEnd/`），主菜单只是被 push 到 `UI.Layer.Menu` 的一个普通可激活控件。
 
-驱动它的是挂在 GameState 上的组件 `Source/LyraGame/UI/Frontend/LyraFrontendStateComponent.cpp`。它是 Abstract 的，具体的蓝图子类 `B_LyraFrontendStateComponent` 里填了两个软类属性：`PressStartScreenClass = /Game/UI/Menu/W_LyraStartup`、`MainScreenClass = /Game/UI/Menu/W_LyraFrontEnd`。组件在 `BeginPlay` 里用我们熟悉的 `CallOrRegister` 模式等 Experience 加载完成（[第 6 章](06-Experience.md)），然后搭一条“控制流（Control Flow）”：
+驱动它的是挂在 GameState 上的组件 [`ULyraFrontendStateComponent`](../../../Source/LyraGame/UI/Frontend/LyraFrontendStateComponent.cpp)。它是 Abstract 的，具体的蓝图子类 `B_LyraFrontendStateComponent` 里填了两个软类属性：`PressStartScreenClass = /Game/UI/Menu/W_LyraStartup`、`MainScreenClass = /Game/UI/Menu/W_LyraFrontEnd`。组件在 `BeginPlay` 里用我们熟悉的 `CallOrRegister` 模式等 Experience 加载完成（[第 6 章](06-Experience.md)），然后搭一条“控制流（Control Flow）”：
 
 ```cpp
 // 简化自 Source/LyraGame/UI/Frontend/LyraFrontendStateComponent.cpp

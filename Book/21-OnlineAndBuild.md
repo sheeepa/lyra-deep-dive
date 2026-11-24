@@ -59,7 +59,7 @@ UE 里“切换地图”统称旅行。**URL** 是它的参数格式，长这样
 
 最直观的做法是在 GameInstance 或蓝图里调 `IOnlineIdentity::Login`。它在 PC 上也许够用，但这几件事就应付不了：主机平台“按任意键才确定是哪个手柄的玩家登录”；分屏时第二个玩家可以当“访客”，没有平台账号；Steam 加 EOS 的组合里同时存在“平台身份”和“服务身份”两套上下文；登录之后还要检查“能不能联机、能不能用语音”这些权限。每个平台一份登录分支，很快就失控。
 
-CommonUser 插件（`Plugins/CommonUser/Source/CommonUser/Public/CommonUserSubsystem.h`）把这一切包成两个子系统，游戏代码只面对它们。Epic 的官方文档《Common User Plugin for Lyra》（写于 5.0–5.1 时期）对它的定位是：OSS 是通用的，但不支持典型游戏会话的**高层流程**；CommonUser 是可选插件，补上“按任意键”的参与界面、手柄处理、开房和联机游戏这些常见流程；它既随 Lyra 发布，也可以单独用在别的项目里；功能通过子系统暴露，兼容 OSSv1 和实验性的 OSSv2，因为定义在游戏插件里，可以继承修改去适配专有在线系统。官方也明确说了它**不是为纯蓝图项目设计的**（需要 C++）。
+CommonUser 插件（[`Plugins/CommonUser`](../../../Plugins/CommonUser/Source/CommonUser/Public/CommonUserSubsystem.h)）把这一切包成两个子系统，游戏代码只面对它们。Epic 的官方文档《Common User Plugin for Lyra》（写于 5.0–5.1 时期）对它的定位是：OSS 是通用的，但不支持典型游戏会话的**高层流程**；CommonUser 是可选插件，补上“按任意键”的参与界面、手柄处理、开房和联机游戏这些常见流程；它既随 Lyra 发布，也可以单独用在别的项目里；功能通过子系统暴露，兼容 OSSv1 和实验性的 OSSv2，因为定义在游戏插件里，可以继承修改去适配专有在线系统。官方也明确说了它**不是为纯蓝图项目设计的**（需要 C++）。
 
 ### UCommonUserSubsystem 的核心：每个玩家一个 UCommonUserInfo
 
@@ -178,7 +178,7 @@ return ChildClasses.Num() == 0;     // 只在没有项目自己的子类时才�
 
 ### 三个配置项
 
-`UCommonSessionSubsystem` 的几个 `UPROPERTY(Config)` 在 `Config/DefaultEngine.ini` 的 `[/Script/CommonUser.CommonSessionSubsystem]` 里：`bUseLobbiesDefault=true`、`bUseLobbiesVoiceChatDefault=true`，以及（代码里默认 true 的）`bUseBeacons`。Steam 变体会把 `bUseBeacons` 改成 false，原因本章后面讲。
+`UCommonSessionSubsystem` 的几个 `UPROPERTY(Config)` 在 [`DefaultEngine.ini`](../../../Config/DefaultEngine.ini) 的 `[/Script/CommonUser.CommonSessionSubsystem]` 里：`bUseLobbiesDefault=true`、`bUseLobbiesVoiceChatDefault=true`，以及（代码里默认 true 的）`bUseBeacons`。Steam 变体会把 `bUseBeacons` 改成 false，原因本章后面讲。
 
 ## 全流程：点击 → 开房 → 换图 → 服务器读 URL
 
@@ -200,7 +200,7 @@ class ULyraUserFacingExperienceDefinition : public UPrimaryDataAsset
 };
 ```
 
-它是“用户可见的玩法条目”：既是菜单上显示的磁贴，又是开房请求的模板。（它自己也是一个主资产，类型 `LyraUserFacingExperienceDefinition`，被 `Config/DefaultGame.ini` 的 AssetManager 规则扫描 `/Game/UI/Temp` 和 `/Game/System/Playlists`；各个 GameFeature 插件里的 `System/Playlists` 目录靠插件自己的数据声明扫描规则——例如 `ShooterMaps` 里有 `DA_Expanse_TDM`。）
+它是“用户可见的玩法条目”：既是菜单上显示的磁贴，又是开房请求的模板。（它自己也是一个主资产，类型 `LyraUserFacingExperienceDefinition`，被 [`DefaultGame.ini`](../../../Config/DefaultGame.ini) 的 AssetManager 规则扫描 `/Game/UI/Temp` 和 `/Game/System/Playlists`；各个 GameFeature 插件里的 `System/Playlists` 目录靠插件自己的数据声明扫描规则——例如 `ShooterMaps` 里有 `DA_Expanse_TDM`。）
 
 ### 第一站：CreateHostingRequest
 
@@ -382,7 +382,7 @@ LyraServer.exe /Game/System/FrontEnd/Maps/L_LyraFrontEnd -log -UserExperience=<U
 
 ### 一个共享的出口
 
-所有 `*.Target.cs` 都在 `Source/LyraGame.Target.cs` 下。`LyraGame`、`LyraClient`、`LyraServer`、`LyraEditor` 是基础四个，最后都调用同一个 `LyraGameTarget.ApplySharedLyraTargetSettings(this)`。这个函数的结构值得读一下，因为它藏着一个重要的分支：
+所有 `*.Target.cs` 都在 [`Source/`](../../../Source/LyraGame.Target.cs) 下。`LyraGame`、`LyraClient`、`LyraServer`、`LyraEditor` 是基础四个，最后都调用同一个 `LyraGameTarget.ApplySharedLyraTargetSettings(this)`。这个函数的结构值得读一下，因为它藏着一个重要的分支：
 
 ```csharp
 // 简化自 Source/LyraGame.Target.cs 的 LyraGameTarget.ApplySharedLyraTargetSettings
@@ -422,7 +422,7 @@ public class LyraGameSteamTarget : LyraGameTarget
 }
 ```
 
-`LyraGameEOS`、`LyraGameSteamEOS` 还会 `EnablePlugins.AddRange(...)` 加上 `OnlineServicesEOS`、`OnlineSubsystemEOS`，并把 `EOSReservedHooks` 列为可选插件；`LyraServerXxx` 继承 `LyraServerTarget` 做同样的事。**Steam 变体不需要额外启用插件**，因为 `LyraStarterGame.uproject` 里已经启用了 `OnlineSubsystemSteam`、`SocketSubsystemSteamIP` 和 `SteamSockets`。
+`LyraGameEOS`、`LyraGameSteamEOS` 还会 `EnablePlugins.AddRange(...)` 加上 `OnlineServicesEOS`、`OnlineSubsystemEOS`，并把 `EOSReservedHooks` 列为可选插件；`LyraServerXxx` 继承 `LyraServerTarget` 做同样的事。**Steam 变体不需要额外启用插件**，因为 [`LyraStarterGame.uproject`](../../../LyraStarterGame.uproject) 里已经启用了 `OnlineSubsystemSteam`、`SocketSubsystemSteamIP` 和 `SteamSockets`。
 
 所以 Target 之间的真正差异，几乎都在 `CustomConfig` 指向的 ini 里：
 
@@ -435,7 +435,7 @@ public class LyraGameSteamTarget : LyraGameTarget
 
 ### 配置叠加：Config/Custom/<Name>/
 
-`CustomConfig` 让 UBT 在这次构建里把 `Config/Custom/<Name>/Default*.ini` 叠加到项目配置上。基础的 `DefaultEngine.ini` 不含任何 EOS 或 Steam 的内容——这是有意的，否则开发机的编辑器会去启用不可用的 SDK，需要凭据才能启动，NetDriver 被替换后本地 PIE 联机也会出问题。看 `Config/Custom/Steam/DefaultEngine.ini` 到底叠加了什么：
+`CustomConfig` 让 UBT 在这次构建里把 `Config/Custom/<Name>/Default*.ini` 叠加到项目配置上。基础的 `DefaultEngine.ini` 不含任何 EOS 或 Steam 的内容——这是有意的，否则开发机的编辑器会去启用不可用的 SDK，需要凭据才能启动，NetDriver 被替换后本地 PIE 联机也会出问题。看 [`Config/Custom/Steam/DefaultEngine.ini`](../../../Config/Custom/Steam/DefaultEngine.ini) 到底叠加了什么：
 
 ```ini
 [OnlineSubsystem]
@@ -474,7 +474,7 @@ PublicDefinitions.Add("COMMONUSER_OSSV1=" + (bUseOnlineSubsystemV1 ? "1" : "0"))
 
 ### 热修复（Hotfix）
 
-线上游戏想不重新发版就修一些配置怎么办？UE 的 `UOnlineHotfixManager`（引擎类）会在启动时从在线服务（TitleFile 之类）下载一组“热修复文件”，把里面的 ini 内容合并进运行时配置。Lyra 在 `Config/DefaultEngine.ini` 的 `[/Script/Hotfix.OnlineHotfixManager]` 里指定了子类 `ULyraHotfixManager`，在引擎版基础上只加了几件事：
+线上游戏想不重新发版就修一些配置怎么办？UE 的 `UOnlineHotfixManager`（引擎类）会在启动时从在线服务（TitleFile 之类）下载一组“热修复文件”，把里面的 ini 内容合并进运行时配置。Lyra 在 [`DefaultEngine.ini`](../../../Config/DefaultEngine.ini) 的 `[/Script/Hotfix.OnlineHotfixManager]` 里指定了子类 `ULyraHotfixManager`，在引擎版基础上只加了几件事：
 
 - 编辑器里直接跳过：`StartHotfixProcess` 开头 `if (GIsEditor) { ...Hotfixing skipped...; FinalizeHotfixProcess(SuccessNoChange); return; }`，所以热修复只能在打包版加在线服务下验证；
 - 额外接受 `AssetMigrations.ini` 和任意 `.json` 文件；
@@ -495,7 +495,7 @@ PublicDefinitions.Add("COMMONUSER_OSSV1=" + (bUseOnlineSubsystemV1 ? "1" : "0"))
 
 ### Lyra 的做法
 
-打开 `Config/DefaultGame.ini`，`[/Script/Engine.AssetManagerSettings]` 里的 `PrimaryAssetTypesToScan` 把几类主资产标成 `CookRule=AlwaysCook`：`Map`（前端和编辑器默认地图），`LyraGameData`，`LyraExperienceDefinition`（`/Game/System/Experiences` 加上前端 Experience），`LyraUserFacingExperienceDefinition`（`/Game/UI/Temp`、`/Game/System/Playlists`），`LyraLobbyBackground`，`LyraExperienceActionSet`。也就是说，只要 Experience 和 UserFacing 资产放在这些目录里，不管有没有硬引用，打包时都会被带上。第 6 章讲过的“新 Experience 放错目录就找不到”，在打包版里表现为：运行时日志里 `EXPERIENCE: Wanted to use ... but couldn't find it, falling back to the default`。
+打开 [`Config/DefaultGame.ini`](../../../Config/DefaultGame.ini)，`[/Script/Engine.AssetManagerSettings]` 里的 `PrimaryAssetTypesToScan` 把几类主资产标成 `CookRule=AlwaysCook`：`Map`（前端和编辑器默认地图），`LyraGameData`，`LyraExperienceDefinition`（`/Game/System/Experiences` 加上前端 Experience），`LyraUserFacingExperienceDefinition`（`/Game/UI/Temp`、`/Game/System/Playlists`），`LyraLobbyBackground`，`LyraExperienceActionSet`。也就是说，只要 Experience 和 UserFacing 资产放在这些目录里，不管有没有硬引用，打包时都会被带上。第 6 章讲过的“新 Experience 放错目录就找不到”，在打包版里表现为：运行时日志里 `EXPERIENCE: Wanted to use ... but couldn't find it, falling back to the default`。
 
 GameFeature 插件的内容靠另一条线：它们是 `ExplicitlyLoaded`、`EnabledByDefault: false` 的插件，在 `uproject` 里被显式启用，`ConfigureGameFeaturePlugins` 在 `Unique` 环境（和编辑器目标）里按 `.uplugin` 的字段决定每个插件编译还是禁用；插件自己的 `GameFeatureData` 里的 AssetManager 扫描规则，让它里面的 Experience 和 UserFacing 资产被发现。
 

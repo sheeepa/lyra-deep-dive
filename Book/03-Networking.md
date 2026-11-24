@@ -68,7 +68,7 @@
 
 这有两个后果。第一，如果你在客户端 World 里修改了某个 CDO 或静态变量，服务器 World 也会“看见”——这种串扰在打包后的真实网络里不存在，却会在 PIE 里出现，让你调试出一些不存在的 bug（或者掩盖真实的 bug）。第二，凡是“对整个进程生效”的机制，在 PIE 里都要小心它到底作用于哪个 World。Lyra 的 Experience 机制就特别处理了这一点：Experience 是 Lyra 里描述“这一局玩什么”的数据资产（第 6 章详讲），执行它的 Action 时，会用 `SetRequiredWorldContextHandle` 把作用范围限制在“当前这个 World”（[第 6 章](06-Experience.md) §阶段 4）；Experience 资产本身标成 `Const`，也是因为它的 CDO 被所有 World 共享（[第 6 章](06-Experience.md) §阶段 1）。
 
-Lyra 的编辑器模块还做了一个小定制：如果地图的 World Settings 里勾选了 `ForceStandaloneNetMode`（前端主菜单地图会这样设），`Source/LyraEditor/LyraEditorEngine.cpp` 的 `ULyraEditorEngine::PreCreatePIEInstances` 会把你选的 NetMode 强制改成 Standalone，并弹出一条“Forcing NetMode: Standalone for the Frontend”的提示。主菜单本来就是单机界面，没必要起服务器。
+Lyra 的编辑器模块还做了一个小定制：如果地图的 World Settings 里勾选了 `ForceStandaloneNetMode`（前端主菜单地图会这样设），[`LyraEditorEngine.cpp`](../../../Source/LyraEditor/LyraEditorEngine.cpp) 的 `ULyraEditorEngine::PreCreatePIEInstances` 会把你选的 NetMode 强制改成 Standalone，并弹出一条“Forcing NetMode: Standalone for the Frontend”的提示。主菜单本来就是单机界面，没必要起服务器。
 
 ## 二、这台机器对这个 Actor 有多大权力：所有权（Owner）与角色（Role）
 
@@ -114,7 +114,7 @@ Epic 的官方文档（Actor Owner and Owning Connection）说的是同一件事
 - `IsLocallyControlled()`（对 Pawn/Controller）：这个 Pawn 是不是被本机的玩家控制着。主机服务器上的本地玩家 Pawn：`HasAuthority()` 和 `IsLocallyControlled()` 同时为真；专用服务器上的玩家 Pawn：前者真后者假；玩家自己客户端上的 Pawn：前者假后者真；别人客户端上的副本：两者皆假。
 - `GetNetMode()`：整个进程的身份，不是单个 Actor 的。
 
-Lyra 里这些判断随处可见。`Source/LyraGame/Character/LyraPawnExtensionComponent.cpp` 的 `CanChangeInitState` 里写道：“如果是权威端，或者本地控制，就必须等到被 Controller 附身”，对应代码是 `if (bHasAuthority || bIsLocallyControlled)`；而模拟代理（别人的副本）在客户端上永远不会有对应的 Controller（别人的 PlayerController 不会复制给你），所以它不用等。理解了 Owner 和 Role，这段代码说的其实就是“谁需要 Controller，谁不需要”。
+Lyra 里这些判断随处可见。[`LyraPawnExtensionComponent.cpp`](../../../Source/LyraGame/Character/LyraPawnExtensionComponent.cpp) 的 `CanChangeInitState` 里写道：“如果是权威端，或者本地控制，就必须等到被 Controller 附身”，对应代码是 `if (bHasAuthority || bIsLocallyControlled)`；而模拟代理（别人的副本）在客户端上永远不会有对应的 Controller（别人的 PlayerController 不会复制给你），所以它不用等。理解了 Owner 和 Role，这段代码说的其实就是“谁需要 Controller，谁不需要”。
 
 ## 三、状态同步：Actor 复制、属性复制、复制条件与 OnRep
 
@@ -122,7 +122,7 @@ Lyra 里这些判断随处可见。`Source/LyraGame/Character/LyraPawnExtensionC
 
 不是所有对象都在网络上同步。一个 Actor 要被复制，必须满足：它在服务器上存在，并且 `bReplicates = true`（C++ 里常在构造函数中设置，蓝图里是 Class Defaults 的 Replicates 选项）。满足后，服务器会为每个连接的客户端判断：这个 Actor 对这个客户端**相关吗**（relevancy）？
 
-相关性的直觉是“这个客户端需要知道它吗”：离得太远的 Pawn 不用发给你；只属于别人的东西（比如别人的 PlayerController）也不发给你。相关的 Actor 才会在客户端被创建出来，并持续同步它的被复制属性。Actor 上有几个调节相关性的开关，Lyra 的 `Source/LyraGame/Teams/LyraTeamInfoBase.cpp` 展示了一组典型设置：
+相关性的直觉是“这个客户端需要知道它吗”：离得太远的 Pawn 不用发给你；只属于别人的东西（比如别人的 PlayerController）也不发给你。相关的 Actor 才会在客户端被创建出来，并持续同步它的被复制属性。Actor 上有几个调节相关性的开关，Lyra 的 [`LyraTeamInfoBase.cpp`](../../../Source/LyraGame/Teams/LyraTeamInfoBase.cpp) 展示了一组典型设置：
 
 ```cpp
 // 简化自 Source/LyraGame/Teams/LyraTeamInfoBase.cpp 的 ALyraTeamInfoBase::ALyraTeamInfoBase
@@ -146,7 +146,7 @@ Actor 被复制后，它的哪些数据会同步？答案是：**你明确标记
 
 服务器会定期（按更新频率）比较这个属性和“上次发给这个客户端的值”，有变化就发送；客户端收到后直接把值写进本地对象。注意方向：**属性复制永远是服务器到客户端，单向的**。客户端修改自己本地的副本不会传回服务器（反而下次收到服务器的值时会被覆盖）。
 
-看一个最小的真实例子。`Source/LyraGame/Teams/LyraTeamInfoBase.h` 里有这样两个属性，对应的登记在 `.cpp`：
+看一个最小的真实例子。[`LyraTeamInfoBase.h`](../../../Source/LyraGame/Teams/LyraTeamInfoBase.h) 里有这样两个属性，对应的登记在 `.cpp`：
 
 ```cpp
 // 简化自 Source/LyraGame/Teams/LyraTeamInfoBase.h
@@ -192,7 +192,7 @@ void ALyraTeamInfoBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 
 **规则一：OnRep 只在客户端自动触发，服务器上不会。** 服务器是修改值的那一方，引擎不认为它“收到”了什么。（蓝图里的 RepNotify 变量则不同：服务器在蓝图里改值时会自动调用，这是蓝图和 C++ 的一个差异。）所以如果服务器自己也需要对变化做出反应——主机服务器上的本地玩家要看到特效，专用服务器要维护一些状态——你得**手动**在服务器上做同样的事。
 
-看 `Source/LyraGame/Weapons/LyraWeaponSpawner.cpp`：武器刷新点的 `bIsWeaponAvailable` 是 `ReplicatedUsing = OnRep_WeaponAvailability` 的属性。玩家捡走武器时，服务器上的代码是这样的：
+看 [`LyraWeaponSpawner.cpp`](../../../Source/LyraGame/Weapons/LyraWeaponSpawner.cpp)：武器刷新点的 `bIsWeaponAvailable` 是 `ReplicatedUsing = OnRep_WeaponAvailability` 的属性。玩家捡走武器时，服务器上的代码是这样的：
 
 ```cpp
 // 简化自 Source/LyraGame/Weapons/LyraWeaponSpawner.cpp 的 ALyraWeaponSpawner::AttemptPickUpWeapon_Implementation
@@ -210,7 +210,7 @@ if (bIsWeaponAvailable) { PlayRespawnEffects(); SetWeaponPickupVisibility(true);
 else { SetWeaponPickupVisibility(false); StartCoolDown(); PlayPickupEffects(); }
 ```
 
-同一件事走了两条路：服务器直接做，客户端等 OnRep 来做。这是 Lyra 里一个非常常见的模式，也是你读代码时要主动找的“对称结构”。另一个版本出现在 `Source/LyraGame/Equipment/LyraQuickBarComponent.cpp`：服务器改完 `ActiveSlotIndex` 后，直接调用一次 `OnRep_ActiveSlotIndex()`，这样服务器自己也会广播“当前槽位变了”的消息。
+同一件事走了两条路：服务器直接做，客户端等 OnRep 来做。这是 Lyra 里一个非常常见的模式，也是你读代码时要主动找的“对称结构”。另一个版本出现在 [`LyraQuickBarComponent.cpp`](../../../Source/LyraGame/Equipment/LyraQuickBarComponent.cpp)：服务器改完 `ActiveSlotIndex` 后，直接调用一次 `OnRep_ActiveSlotIndex()`，这样服务器自己也会广播“当前槽位变了”的消息。
 
 **规则二：OnRep 只在值真的变了的时候才触发。** 引擎比较的是“客户端本地的旧值”和“收到的新值”，相同就不调用。（用 `REPNOTIFY_Always` 可以改成每次都调用，但很少需要。）
 
@@ -234,7 +234,7 @@ else { SetWeaponPickupVisibility(false); StartCoolDown(); PlayPickupEffects(); }
 
 实现 RPC 时，你写的是一个名字带 `_Implementation` 后缀的函数；声明里写 `ServerFoo`，实现里就是 `ServerFoo_Implementation`（UHT 帮你生成调用端的包装）。Lyra 里这四种组合都有真实例子，我们挨个看。
 
-**Server RPC。** `Source/LyraGame/Equipment/LyraQuickBarComponent.h` 的 `UFUNCTION(Server, Reliable, BlueprintCallable) void SetActiveSlotIndex(int32 NewIndex)`：玩家切换快捷栏槽位。它的实现在服务器上执行：
+**Server RPC。** [`LyraQuickBarComponent.h`](../../../Source/LyraGame/Equipment/LyraQuickBarComponent.h) 的 `UFUNCTION(Server, Reliable, BlueprintCallable) void SetActiveSlotIndex(int32 NewIndex)`：玩家切换快捷栏槽位。它的实现在服务器上执行：
 
 ```cpp
 // 简化自 Source/LyraGame/Equipment/LyraQuickBarComponent.cpp 的 ULyraQuickBarComponent::SetActiveSlotIndex_Implementation
@@ -262,9 +262,9 @@ void ServerCheat(const FString& Msg);
 
 Lyra 的 `ServerCheat_Validate` 直接 `return true`——也就是不做任何校验。这在开发期方便调试，但提醒你：`WithValidation` 只是提供了位置，校验逻辑得由你来写。
 
-**Client RPC。** `Source/LyraGame/Weapons/LyraWeaponStateComponent.h` 的 `UFUNCTION(Client, Reliable) void ClientConfirmTargetData(uint16 UniqueId, bool bSuccess, const TArray<uint8>& HitReplaces)`：服务器处理完一次射击的命中结果后，通知开枪的那个客户端“你的第 N 次命中被确认了”，客户端据此显示命中标记。它挂在 Controller 组件上，拥有者就是那位玩家，所以这条消息只会发给他一个人。（这个流程在 [第 14 章](14-Weapons.md) 展开。）
+**Client RPC。** [`LyraWeaponStateComponent.h`](../../../Source/LyraGame/Weapons/LyraWeaponStateComponent.h) 的 `UFUNCTION(Client, Reliable) void ClientConfirmTargetData(uint16 UniqueId, bool bSuccess, const TArray<uint8>& HitReplaces)`：服务器处理完一次射击的命中结果后，通知开枪的那个客户端“你的第 N 次命中被确认了”，客户端据此显示命中标记。它挂在 Controller 组件上，拥有者就是那位玩家，所以这条消息只会发给他一个人。（这个流程在 [第 14 章](14-Weapons.md) 展开。）
 
-**多播 RPC。** `Source/LyraGame/GameModes/LyraGameState.h` 有两个：
+**多播 RPC。** [`LyraGameState.h`](../../../Source/LyraGame/GameModes/LyraGameState.h) 有两个：
 
 ```cpp
 // 简化自 Source/LyraGame/GameModes/LyraGameState.h
@@ -299,7 +299,7 @@ if (GetNetMode() == NM_Client)
 
 Lyra 大量功能放在组件里（`ULyraHealthComponent`、`ULyraEquipmentManagerComponent` ……），所以还要知道组件怎么复制。规则很简单：**组件所属的 Actor 必须被复制，组件自己也要声明“我是被复制的”**。C++ 里在组件构造函数中调用 `SetIsReplicatedByDefault(true)`（如 `ULyraHealthComponent` 的构造函数），对运行时动态添加的组件可用 `SetIsReplicated(true)`。之后组件和 Actor 一样，有自己的 `GetLifetimeReplicatedProps`、自己的 OnRep、自己的 RPC。例如 `ULyraHealthComponent` 的 `DeathState` 就是挂在组件上的被复制属性。
 
-更进一步，如果被复制的数据放在一个**不是 Actor 也不是组件的普通 UObject** 上（Lyra 的装备实例 `ULyraEquipmentInstance`、物品实例 `ULyraInventoryItemInstance` 就是这种），这个 UObject 要作为**被复制的子对象（Replicated Subobject）**由拥有它的 Actor 或组件“登记”才能同步。UE 5.x 推荐的做法是**注册子对象列表（Registered Subobject List）**：拥有者调用 `AddReplicatedSubObject(Object)` 注册、`RemoveReplicatedSubObject` 注销，并让子对象类重写 `IsSupportedForNetworking()` 返回 `true`。看 `Source/LyraGame/Equipment/LyraEquipmentManagerComponent.cpp`：
+更进一步，如果被复制的数据放在一个**不是 Actor 也不是组件的普通 UObject** 上（Lyra 的装备实例 `ULyraEquipmentInstance`、物品实例 `ULyraInventoryItemInstance` 就是这种），这个 UObject 要作为**被复制的子对象（Replicated Subobject）**由拥有它的 Actor 或组件“登记”才能同步。UE 5.x 推荐的做法是**注册子对象列表（Registered Subobject List）**：拥有者调用 `AddReplicatedSubObject(Object)` 注册、`RemoveReplicatedSubObject` 注销，并让子对象类重写 `IsSupportedForNetworking()` 返回 `true`。看 [`LyraEquipmentManagerComponent.cpp`](../../../Source/LyraGame/Equipment/LyraEquipmentManagerComponent.cpp)：
 
 ```cpp
 // 简化自 Source/LyraGame/Equipment/LyraEquipmentManagerComponent.cpp 的 ULyraEquipmentManagerComponent::EquipItem
@@ -353,7 +353,7 @@ if (HasAuthority())
 
 **FastArraySerializer** 是 UE 提供的一套机制：数组的每个元素有一个自增的 ID 和版本号，服务器只发“新增了哪些、删除了哪些、哪个元素变了”，客户端收到后通过**三个回调**精确知道发生了什么。使用步骤是固定的：元素结构体继承 `FFastArraySerializerItem`，容器结构体继承 `FFastArraySerializer`，实现 `NetDeltaSerialize`，并通过 `TStructOpsTypeTraits` 声明 `WithNetDeltaSerializer = true`。修改数据时必须调用 `MarkItemDirty` 或 `MarkArrayDirty`。
 
-Lyra 项目里最小的一个例子是 `Source/LyraGame/System/GameplayTagStack.h`（一个“Tag 加数量”的计数容器，用于物品的弹药数、玩家的统计）：
+Lyra 项目里最小的一个例子是 [`GameplayTagStack.h`](../../../Source/LyraGame/System/GameplayTagStack.h)（一个“Tag 加数量”的计数容器，用于物品的弹药数、玩家的统计）：
 
 ```cpp
 // 简化自 Source/LyraGame/System/GameplayTagStack.h
@@ -366,30 +366,23 @@ struct FGameplayTagStack : public FFastArraySerializerItem      // 元素
 };
 
 USTRUCT(BlueprintType)
-struct FGameplayTagStackContainer : public FFastArraySerializer  // 容器
+struct FGameplayTagStackContainer : public FFastArraySerializer  // 容器（省去 AddStack 等接口）
 {
     GENERATED_BODY()
-    // ……AddStack / RemoveStack / GetStackCount
-
     // 三个回调：客户端收到“删除前 / 新增后 / 修改后”的通知
     void PreReplicatedRemove(const TArrayView<int32> RemovedIndices, int32 FinalSize);
     void PostReplicatedAdd(const TArrayView<int32> AddedIndices, int32 FinalSize);
     void PostReplicatedChange(const TArrayView<int32> ChangedIndices, int32 FinalSize);
-
     bool NetDeltaSerialize(FNetDeltaSerializeInfo& DeltaParms)
     {
         return FFastArraySerializer::FastArrayDeltaSerialize<FGameplayTagStack, FGameplayTagStackContainer>(Stacks, DeltaParms, *this);
     }
-
 private:
     UPROPERTY() TArray<FGameplayTagStack> Stacks;      // 真正被复制的数组
     TMap<FGameplayTag, int32> TagToCountMap;           // 不复制，客户端靠回调重建的查询加速表
 };
-
 template<> struct TStructOpsTypeTraits<FGameplayTagStackContainer> : public TStructOpsTypeTraitsBase2<FGameplayTagStackContainer>
-{
-    enum { WithNetDeltaSerializer = true };   // 告诉引擎：这个结构体自己处理复制
-};
+{ enum { WithNetDeltaSerializer = true }; };           // 告诉引擎：这个结构体自己处理增量复制
 ```
 
 使用时，容器作为一个普通的被复制属性放在 Actor 上，例如 `ALyraPlayerState` 里的 `UPROPERTY(Replicated) FGameplayTagStackContainer StatTags;`。修改发生在服务器上：
@@ -462,7 +455,7 @@ sequenceDiagram
 
 **样本 2：`ULyraExperienceManagerComponent::CurrentExperience`——服务器设置，客户端 OnRep。** 它是 GameState 上的组件，属性声明是 `UPROPERTY(ReplicatedUsing=OnRep_CurrentExperience)`，登记写的是最朴素的 `DOREPLIFETIME(ThisClass, CurrentExperience)`。服务器调用 `SetCurrentExperience`，客户端在 `OnRep_CurrentExperience` 里开始自己的加载。注意 `LoadState` 没有复制：每一端各自加载，各自进度（[第 6 章](06-Experience.md)）。
 
-**样本 3：`ULyraHealthComponent::DeathState`——服务器改、客户端 OnRep 推进。** 这是 `Source/LyraGame/Character/LyraHealthComponent.cpp` 里最值得读的一段 OnRep：
+**样本 3：`ULyraHealthComponent::DeathState`——服务器改、客户端 OnRep 推进。** 这是 [`LyraHealthComponent.cpp`](../../../Source/LyraGame/Character/LyraHealthComponent.cpp) 里最值得读的一段 OnRep：
 
 ```cpp
 // 简化自 Source/LyraGame/Character/LyraHealthComponent.cpp 的 ULyraHealthComponent::OnRep_DeathState
@@ -522,7 +515,7 @@ void ULyraHealthComponent::OnRep_DeathState(ELyraDeathState OldDeathState)
 
 **先写下你的预测**：`EXPERIENCE: StartExperienceLoad` 这行会出现几次？每一行末尾会带什么标记？
 
-**预期结果**：出现 3 次——专用服务器 1 次，两个客户端各 1 次。每行末尾的上下文字符串来自 `Source/LyraGame/LyraLogChannels.cpp` 的 `GetClientServerContextString`：权威端打印 `Server`，非权威端打印 `Client`。（日志窗口通常也会给 PIE 实例加 `[Client 1]` 之类的前缀，可以对照看。）
+**预期结果**：出现 3 次——专用服务器 1 次，两个客户端各 1 次。每行末尾的上下文字符串来自 [`LyraLogChannels.cpp`](../../../Source/LyraGame/LyraLogChannels.cpp) 的 `GetClientServerContextString`：权威端打印 `Server`，非权威端打印 `Client`。（日志窗口通常也会给 PIE 实例加 `[Client 1]` 之类的前缀，可以对照看。）
 
 **原理**：`ULyraExperienceManagerComponent` 是 GameState 的组件，三台机器上各有一份，各自响应 `OnRep_CurrentExperience`（客户端）或 `SetCurrentExperience`（服务器），各自走完加载流程。这正是第 6 章说的“服务器只负责选，加载由每一端自己完成”。
 

@@ -303,28 +303,21 @@ if (bShouldNotifyServer)
     MyAbilityComponent->CallServerSetReplicatedTargetData(CurrentSpecHandle, CurrentActivationInfo.GetActivationPredictionKey(),
                                                           LocalTargetDataHandle, ApplicationTag, MyAbilityComponent->ScopedPredictionKey);
 }
-
 const bool bIsTargetDataValid = true;     // ← 服务器校验本应发生的地方，原版写死为 true
-
 #if WITH_SERVER_CODE
-// ② 权威端：确认命中标记
+// ② 权威端：确认命中标记（HitReplaces 收集被替换的命中索引）
 if (Controller->GetLocalRole() == ROLE_Authority)
 {
-    // 收集“被替换”的命中索引 HitReplaces
     WeaponStateComponent->ClientConfirmTargetData(LocalTargetDataHandle.UniqueId, bIsTargetDataValid, HitReplaces);
 }
 #endif
-
 // ③ 两端都做：提交技能（扣代价）、加热、让蓝图应用效果
 if (bIsTargetDataValid && CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
 {
     WeaponData->AddSpread();
     OnRangedWeaponTargetDataReady(LocalTargetDataHandle);   // BlueprintImplementableEvent
 }
-else
-{
-    K2_EndAbility();
-}
+else { K2_EndAbility(); }
 ```
 
 分支①的条件是 `IsLocallyControlled && !IsNetAuthority`：纯客户端上的本地玩家。分支②只在权威端：专用服务器上收到客户端 RPC 之后，或者主机服务器（Listen Server）上房主自己开火时。分支③在两端都跑，所以 `CommitAbility` 和 `AddSpread` 在客户端也会预测地执行。

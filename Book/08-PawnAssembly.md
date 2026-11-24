@@ -38,7 +38,7 @@
 
 ## PawnData：角色是什么
 
-先从“角色配置”这份数据看起。看 `Source/LyraGame/Character/LyraPawnData.h`，`ULyraPawnData` 是一个继承自 `UPrimaryDataAsset` 的数据资产（所以它能被 AssetManager 按 ID 找到），类上标了 `Const`，运行时不可修改。它有五个字段：
+先从“角色配置”这份数据看起。看 [`LyraPawnData.h`](../../../Source/LyraGame/Character/LyraPawnData.h)，`ULyraPawnData` 是一个继承自 `UPrimaryDataAsset` 的数据资产（所以它能被 AssetManager 按 ID 找到），类上标了 `Const`，运行时不可修改。它有五个字段：
 
 | 字段 | 作用 |
 |---|---|
@@ -159,7 +159,7 @@ if (UClass* PawnClass = GetDefaultPawnClassForController(NewPlayer))
 
 ## PawnData 为什么存了两份
 
-打开 `Source/LyraGame/Player/LyraPlayerState.h` 和 `Source/LyraGame/Character/LyraPawnExtensionComponent.h`，你会发现两处都有一个 `PawnData` 属性：PlayerState 上一份，Pawn 的 PawnExtension 组件上一份。为什么要存两遍？
+打开 [`LyraPlayerState.h`](../../../Source/LyraGame/Player/LyraPlayerState.h) 和 [`LyraPawnExtensionComponent.h`](../../../Source/LyraGame/Character/LyraPawnExtensionComponent.h)，你会发现两处都有一个 `PawnData` 属性：PlayerState 上一份，Pawn 的 PawnExtension 组件上一份。为什么要存两遍？
 
 关键在于**生命周期不同、可用的端不同**。
 
@@ -249,7 +249,7 @@ ComponentManager->RegisterInitState(LyraGameplayTags::InitState_DataInitialized,
 ComponentManager->RegisterInitState(LyraGameplayTags::InitState_GameplayReady,   false, LyraGameplayTags::InitState_DataInitialized);
 ```
 
-四个状态，用 GameplayTag 表示（第 4 章的 Tag 作为契约）。`Source/LyraGame/LyraGameplayTags.cpp` 里它们的注释很准确地说出了含义：
+四个状态，用 GameplayTag 表示（第 4 章的 Tag 作为契约）。[`LyraGameplayTags.cpp`](../../../Source/LyraGame/LyraGameplayTags.cpp) 里它们的注释很准确地说出了含义：
 
 - `InitState.Spawned`：Actor/组件已经创建，可以被扩展；
 - `InitState.DataAvailable`：所有需要的数据都已经加载、复制到位，可以开始初始化；
@@ -650,7 +650,7 @@ void UMyFeatureComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 **步骤**：
 
 1. 用 IDE 以调试方式启动编辑器（或附加到已运行的编辑器）。
-2. 在 `Source/LyraGame/Character/LyraHeroComponent.cpp` 的 `ULyraHeroComponent::CanChangeInitState` 里，`Spawned → DataAvailable` 分支中的每一个 `return false;` 上各设一个断点（共三处：没有 PlayerState、Controller 没配对、缺输入组件或 LocalPlayer）。在 `ULyraPawnExtensionComponent::CanChangeInitState` 的两处 `return false;`（缺 PawnData、缺 Controller）也各设一个。
+2. 在 [`LyraHeroComponent.cpp`](../../../Source/LyraGame/Character/LyraHeroComponent.cpp) 的 `ULyraHeroComponent::CanChangeInitState` 里，`Spawned → DataAvailable` 分支中的每一个 `return false;` 上各设一个断点（共三处：没有 PlayerState、Controller 没配对、缺输入组件或 LocalPlayer）。在 `ULyraPawnExtensionComponent::CanChangeInitState` 的两处 `return false;`（缺 PawnData、缺 Controller）也各设一个。
 3. 网络模式选 Play As Client，玩家数 2，运行 PIE，每次命中断点，记下：命中的是哪个断点、调用栈里最近的几个函数是谁（`OnRep_PlayerState`？`SetupPlayerInputComponent`？`BeginPlay`？）、Pawn 的 `GetLocalRole()` 是多少。
 
 **先写下你的预测**：三个条件各命中几次？谁是最后一个满足的？

@@ -77,7 +77,7 @@
 | `UCommonSessionSubsystem` | Public/CommonSessionSubsystem.h:~245 / Private/CommonSessionSubsystem.cpp:316 | Host/QuickPlay/Find/Join/CleanUp、事件广播、Reservation Beacon |
 | `UCommonSession_HostSessionRequest` | CommonSessionSubsystem.h:~65 / cpp:241-312 | 主机请求：OnlineMode(Offline/LAN/Online)、bUseLobbies、bUsePresence、ModeNameForAdvertisement、MapID、ExtraArgs、MaxPlayerCount；`ConstructTravelURL`(cpp:254) |
 | `UCommonSession_SearchSessionRequest` / `UCommonSession_SearchResult` | CommonSessionSubsystem.h | 搜索请求与结果（OSSv1 包 `FOnlineSessionSearchResult`，v2 包 `FLobby`） |
-| `FCommonOnlineSearchSettingsOSSv1/v2` | CommonSessionSubsystem.cpp:~190 / ~220 | 搜索条件载体（v1: `QuerySettings`；v2: `FindLobbyParams.Filters`） |
+| `FCommonOnlineSearchSettingsOSSv1/v2` | CommonSessionSubsystem.cpp:190 / 220 附近 | 搜索条件载体（v1: `QuerySettings`；v2: `FindLobbyParams.Filters`） |
 
 ### 2.4 Hotfix / Performance / 平台
 
@@ -402,7 +402,7 @@ sequenceDiagram
 2. **动态路径只认 UFUNCTION/UPROPERTY**：getter 不能有参数；setter 必须刚好一个参数；`UPROPERTY` 可见性（private 也可，因为通过反射）。拼写错误只在非 Shipping ensure。
 3. **字符串往返**：Number/Enum 选项用字符串比较，浮点格式不同会导致找不到选项而回退到 `GetDiscreteOptionDefaultIndex()`（可能返回 -1，需设置 `SetDefaultValue`）。
 4. **DevName 必须全局唯一**（`RegisterInnerSettings` 在非 Shipping 会 ensure 重复）；`PerfStat` 的 DevName 由 `SetStat` 自动生成 `PerfStat_<int>`；按键行 `KBM_Input_<MappingName>`。
-5. **Scalar 必须配置 DisplayFormat / 范围**；`SetValue` 会按 `SourceStep` 取整并受 Min/Max Limit 钳制。Brightness 使用 1.7~2.7 的 gamma 映射为 50%~150% 显示（Video.cpp:337-340）。
+5. **Scalar 必须配置 DisplayFormat / 范围**；`SetValue` 会按 `SourceStep` 取整并受 Min/Max Limit 钳制。Brightness 使用 1.7-2.7 的 gamma 映射为 50%-150% 显示（Video.cpp:337-340）。
 6. **Resolution / Display / OverallQuality 的 `StoreInitial/Reset/Restore` 为空实现**：这些设置依赖 `UGameUserSettings` 自身的挂起/回滚机制，Cancel 对它们靠引擎的 `ResetToCurrentSettings`，不要照抄这个模式给普通设置。
 7. **画质类立即应用**（`FGameSettingEditCondition_VideoQuality::SettingChanged`）：Cancel 通过 `RestoreToInitial` 恢复值后再次触发应用，没有"确认视频模式倒计时"UI。
 8. **`static_assert(sizeof(Scalability::FQualityLevels) == 88)`** 出现在 LyraSettingsLocal.cpp 多处，引擎升级新增质量通道时会编译失败，需同步更新 Snapshot/Override/Clamp/Highest-level 四处。

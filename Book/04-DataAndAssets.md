@@ -86,7 +86,7 @@ UE 提供了几种软引用类型，用法一一对应硬引用：
 
 Lyra 的原则大致是：**会被很多地方引用、体积小、一定会用到的数据，用硬引用；体积大、只在某些模式或某一端才需要的资源，用软引用。** 在源码里很容易找到对照。
 
-`Source/LyraGame/GameModes/LyraUserFacingExperienceDefinition.h`（主菜单里“一个可选玩法”的描述）里同时出现了两种：
+[`LyraUserFacingExperienceDefinition.h`](../../../Source/LyraGame/GameModes/LyraUserFacingExperienceDefinition.h)（主菜单里“一个可选玩法”的描述）里同时出现了两种：
 
 ```cpp
 // 简化自 Source/LyraGame/GameModes/LyraUserFacingExperienceDefinition.h
@@ -99,7 +99,7 @@ UPROPERTY(BlueprintReadWrite, EditAnywhere, Category=LoadingScreen)
 TSoftClassPtr<UUserWidget> LoadingScreenWidget;        // 软：加载屏控件，只有真进这个玩法时才需要
 ```
 
-`Source/LyraGame/GameModes/LyraWorldSettings.h` 里地图默认 Experience 用的也是软类引用 `TSoftClassPtr<ULyraExperienceDefinition> DefaultGameplayExperience`——地图一加载就拖进一个玩法，可就糟了。`ALyraWorldSettings::GetDefaultGameplayExperience` 靠 `UAssetManager::GetPrimaryAssetIdForPath` 把这个软引用换成主资产 ID（下一节讲），全程不加载资产本身。
+[`LyraWorldSettings.h`](../../../Source/LyraGame/GameModes/LyraWorldSettings.h) 里地图默认 Experience 用的也是软类引用 `TSoftClassPtr<ULyraExperienceDefinition> DefaultGameplayExperience`——地图一加载就拖进一个玩法，可就糟了。`ALyraWorldSettings::GetDefaultGameplayExperience` 靠 `UAssetManager::GetPrimaryAssetIdForPath` 把这个软引用换成主资产 ID（下一节讲），全程不加载资产本身。
 
 再看一个“妥协”：`ULyraExperienceDefinition::DefaultPawnData` 是硬引用 `TObjectPtr<const ULyraPawnData>`，源码里留着 `//@TODO: Make soft?`。`ULyraPawnData` 里的 `PawnClass`（`TSubclassOf<APawn>`）和 `AbilitySets` 也都是硬引用。这是有意的取舍：PawnData 就是“这个角色的全部”，用到它时本来就需要这些东西，硬引用换来简单、依赖齐全、没有“还没加载完”的状态要处理。
 
@@ -183,7 +183,7 @@ StreamableManager.RequestAsyncLoad(
 - 它有一个 **主资产 ID（Primary Asset ID）**，格式是 `类型:名字`，例如 `LyraExperienceDefinition:B_ShooterGame_Elimination`（[第 6 章](06-Experience.md)里 Experience 就是用 `FPrimaryAssetId` 这个类型来标识的）。**ID 是比路径更稳定的“逻辑名字”**：资产移动目录后路径变了，ID 里的名字不变；而且你可以不知道路径，只用 ID 向管理者要资产。
 - 它能记录**资产包数据（`AssetBundleData`）**，下一节讲。
 
-Lyra 里的主数据资产随处可见：`ULyraExperienceDefinition`（玩法）、`ULyraPawnData`（角色配置）、`ULyraGameData`（全局数据）、`ULyraExperienceActionSet`、`ULyraUserFacingExperienceDefinition`……其中前三个都标了 `UCLASS(BlueprintType, Const)`：`Const` 表示运行时不应被修改，因为它们被所有人共享。看一个最小的，`Source/LyraGame/System/LyraGameData.h`：
+Lyra 里的主数据资产随处可见：`ULyraExperienceDefinition`（玩法）、`ULyraPawnData`（角色配置）、`ULyraGameData`（全局数据）、`ULyraExperienceActionSet`、`ULyraUserFacingExperienceDefinition`……其中前三个都标了 `UCLASS(BlueprintType, Const)`：`Const` 表示运行时不应被修改，因为它们被所有人共享。看一个最小的，[`LyraGameData.h`](../../../Source/LyraGame/System/LyraGameData.h)：
 
 ```cpp
 // 简化自 Source/LyraGame/System/LyraGameData.h
@@ -305,7 +305,7 @@ void ULyraAssetManager::StartInitialLoading()
 
 ### 三步走：标记 → 收集 → 加载
 
-**第一步，在属性上标记（编写时）。** 在软引用属性的 `UPROPERTY` 里加 `meta=(AssetBundles="...")`，值是这个引用属于哪些包，逗号分隔。看 `Source/LyraGame/GameFeatures/GameFeatureAction_AddAbilities.h`：
+**第一步，在属性上标记（编写时）。** 在软引用属性的 `UPROPERTY` 里加 `meta=(AssetBundles="...")`，值是这个引用属于哪些包，逗号分隔。看 [`GameFeatureAction_AddAbilities.h`](../../../Source/LyraGame/GameFeatures/GameFeatureAction_AddAbilities.h)：
 
 ```cpp
 // 简化自 Source/LyraGame/GameFeatures/GameFeatureAction_AddAbilities.h
@@ -320,7 +320,7 @@ struct FLyraAbilityGrant
 };
 ```
 
-而 `Source/LyraGame/GameFeatures/GameFeatureAction_AddWidget.h` 里的 HUD 控件类只属于客户端：
+而 [`GameFeatureAction_AddWidget.h`](../../../Source/LyraGame/GameFeatures/GameFeatureAction_AddWidget.h) 里的 HUD 控件类只属于客户端：
 
 ```cpp
 // 简化自 Source/LyraGame/GameFeatures/GameFeatureAction_AddWidget.h
@@ -332,7 +332,7 @@ TSoftClassPtr<UUserWidget> WidgetClass;     // 专用服务器永远不需要它
 
 这里有三个已在 5.8 源码里核对的细节。第一，扫描是**递归**的：它会钻进结构体、数组、Map 里面找带标记的软引用，所以标记写在 Action 内部的结构体成员上（比如上面的 `FLyraAbilityGrant::AbilityType`）也会被收集。第二，遇到 `UObject` 指针属性时，只有标了 `Instanced`（或 `IncludeAssetBundles`）才会钻进去；Experience 的 `Actions` 正好是 `Instanced`，所以每个 Action 对象里的标记都会被扫到。第三，包数据是**保存时**才更新的：改了 Experience、ActionSet 或 GameFeatureData 里的软引用，要保存资产，运行时看到的包清单才会更新。
 
-除了自动收集，Lyra 还让每个 Action 有机会手动补充：看 `Source/LyraGame/GameModes/LyraExperienceDefinition.cpp`：
+除了自动收集，Lyra 还让每个 Action 有机会手动补充：看 [`LyraExperienceDefinition.cpp`](../../../Source/LyraGame/GameModes/LyraExperienceDefinition.cpp)：
 
 ```cpp
 // 简化自 Source/LyraGame/GameModes/LyraExperienceDefinition.cpp 的 ULyraExperienceDefinition::UpdateAssetBundleData（仅编辑器）
@@ -445,7 +445,7 @@ const bool bIsDamageFromSelfDestruct = Data.EffectSpec.GetDynamicAssetTags().Has
 
 Tag 要先注册才能用。Lyra 主要有两个来源（引擎还支持从数据表导入），选哪个取决于“谁要用”。
 
-**C++ 原生 Tag。** C++ 代码要引用的 Tag，用宏在代码里声明和定义，编译期就是确定的、有 IDE 补全、改名会报错。`Source/LyraGame/LyraGameplayTags.h` 声明，`Source/LyraGame/LyraGameplayTags.cpp` 定义：
+**C++ 原生 Tag。** C++ 代码要引用的 Tag，用宏在代码里声明和定义，编译期就是确定的、有 IDE 补全、改名会报错。[`LyraGameplayTags.h`](../../../Source/LyraGame/LyraGameplayTags.h) 声明，[`LyraGameplayTags.cpp`](../../../Source/LyraGame/LyraGameplayTags.cpp) 定义：
 
 ```cpp
 // 简化自 Source/LyraGame/LyraGameplayTags.h
@@ -497,7 +497,7 @@ FastReplication=True
 
 **单播委托（`DECLARE_DELEGATE_*`）**：最多绑定一个函数，可以有返回值。用来表示“请你告诉我一件事”。例如 `ULyraCameraComponent` 的 `DECLARE_DELEGATE_RetVal(TSubclassOf<ULyraCameraMode>, FLyraCameraModeDelegate)`：相机组件问外部“现在用哪个相机模式”，外部绑一个函数返回答案。
 
-**多播委托（`DECLARE_MULTICAST_DELEGATE_*`）**：可以绑定任意多个函数，调用 `Broadcast` 时依次通知，没有返回值。例如 `Source/LyraGame/GameModes/LyraExperienceManagerComponent.h` 里的 `DECLARE_MULTICAST_DELEGATE_OneParam(FOnLyraExperienceLoaded, const ULyraExperienceDefinition*)`：Experience 加载完成时通知所有等待者。
+**多播委托（`DECLARE_MULTICAST_DELEGATE_*`）**：可以绑定任意多个函数，调用 `Broadcast` 时依次通知，没有返回值。例如 [`LyraExperienceManagerComponent.h`](../../../Source/LyraGame/GameModes/LyraExperienceManagerComponent.h) 里的 `DECLARE_MULTICAST_DELEGATE_OneParam(FOnLyraExperienceLoaded, const ULyraExperienceDefinition*)`：Experience 加载完成时通知所有等待者。
 
 **动态委托（`DECLARE_DYNAMIC_*`）**：和上面的区别是它走**反射系统**：可以序列化、能在蓝图里绑定（`BlueprintAssignable`）、绑定的函数必须是 `UFUNCTION`；代价是比非动态版本慢，参数类型必须是反射支持的类型。例如 `ULyraHealthComponent` 的死亡事件：
 
@@ -606,7 +606,7 @@ DefaultPawnData=/Game/Characters/Heroes/EmptyPawnData/DefaultPawnData_EmptyPawn.
 
 `/Script/LyraGame` 表示 `LyraGame` 模块里的原生类；`LyraAssetManager` 去掉了 `U`。这就是“ini 值 → 软引用 → 启动时加载”的完整路径，在前面 AssetManager 一节你已经见过它的后半段。
 
-一个值得学习的反面例子：`Config/DefaultRuntimeOptions.ini` 里的小节名是 `[/Script/LyraGame.LyraRuntimeOptons]`，而类名是 `ULyraRuntimeOptions`（`Options` 被拼成了 `Optons`）。**小节名对不上类名，这一节的配置永远不会生效**，也不会报错。这是项目里已知的原版缺陷（参见[参考手册 95](../Reference/95-Verification-Report.md)）。教训：ini 的小节名是字符串，拼写由你负责。
+一个值得学习的反面例子：[`Config/DefaultRuntimeOptions.ini`](../../../Config/DefaultRuntimeOptions.ini) 里的小节名是 `[/Script/LyraGame.LyraRuntimeOptons]`，而类名是 `ULyraRuntimeOptions`（`Options` 被拼成了 `Optons`）。**小节名对不上类名，这一节的配置永远不会生效**，也不会报错。这是项目里已知的原版缺陷（参见[参考手册 95](../Reference/95-Verification-Report.md)）。教训：ini 的小节名是字符串，拼写由你负责。
 
 数组类型的配置靠前缀增删：前面见过 `+`（添加）和 `-`（删除），还有 `!Key=ClearArray`（清空，`DefaultEngine.ini` 的 Iris 过滤配置里就这样先清空再逐条 `+` 添加）。覆盖别人的默认配置时这三个前缀非常常用。
 
@@ -614,7 +614,7 @@ DefaultPawnData=/Game/Characters/Heroes/EmptyPawnData/DefaultPawnData_EmptyPawn.
 
 如果你想让某些配置出现在编辑器的设置窗口里，而不是手改 ini，继承 `UDeveloperSettings`。它的子类是一个普通的配置类，编辑器会自动为它生成设置页面。出现在哪个窗口由类的 `config=` 决定（引擎 `UDeveloperSettings::GetContainerName`）：`config=EditorPerProjectUserSettings` 或 `config=EditorSettings` 的出现在 编辑 → **编辑器偏好设置**，其余（如 `config=Game`）出现在 编辑 → **项目设置**。
 
-`Source/LyraGame/Development/LyraDeveloperSettings.h` 就是第 6 章实验 1 里你会用到的那个：
+[`LyraDeveloperSettings.h`](../../../Source/LyraGame/Development/LyraDeveloperSettings.h) 就是第 6 章实验 1 里你会用到的那个：
 
 ```cpp
 // 简化自 Source/LyraGame/Development/LyraDeveloperSettings.h
@@ -631,7 +631,7 @@ class ULyraDeveloperSettings : public UDeveloperSettingsBackedByCVars
 };
 ```
 
-注意 `config=EditorPerProjectUserSettings`：这类设置是**每个用户自己的**，保存在 `Saved/Config/...` 下，不会提交进版本库，所以你在 PIE 里设的 `ExperienceOverride` 不会影响同事。对比 `Plugins/GameFeatures/ShooterCore/Source/ShooterCoreRuntime/Public/ShooterCoreRuntimeSettings.h`：
+注意 `config=EditorPerProjectUserSettings`：这类设置是**每个用户自己的**，保存在 `Saved/Config/...` 下，不会提交进版本库，所以你在 PIE 里设的 `ExperienceOverride` 不会影响同事。对比 [`ShooterCoreRuntimeSettings.h`](../../../Plugins/GameFeatures/ShooterCore/Source/ShooterCoreRuntime/Public/ShooterCoreRuntimeSettings.h)：
 
 ```cpp
 // 简化自 Plugins/GameFeatures/ShooterCore/Source/ShooterCoreRuntime/Public/ShooterCoreRuntimeSettings.h
@@ -656,7 +656,7 @@ UE 的 C++ 代码被组织成**模块（Module）**。一个模块就是一个�
 - `PublicDependencyModuleNames`：我的**公共头文件**里用到了对方的类型，所以依赖我的人也需要看到对方；
 - `PrivateDependencyModuleNames`：只有我的 `.cpp` 里用到，不传递给依赖我的人。
 
-看 `Source/LyraGame/LyraGame.Build.cs`：公共依赖里有 `GameplayTags`、`GameplayAbilities`、`ModularGameplay`、`GameFeatures`、`ReplicationGraph`……私有依赖里有 `EnhancedInput`、`CommonUI`、`UMG`、`NetCore`……。如果你写了某个类的头文件并使用了 GAS 的类型，却忘了在 `Build.cs` 里加对应模块，编译会通过前面（IDE 里能找到头），**链接阶段**报“未解析的外部符号”——这是新手最常遇到的构建错误之一。
+看 [`LyraGame.Build.cs`](../../../Source/LyraGame/LyraGame.Build.cs)：公共依赖里有 `GameplayTags`、`GameplayAbilities`、`ModularGameplay`、`GameFeatures`、`ReplicationGraph`……私有依赖里有 `EnhancedInput`、`CommonUI`、`UMG`、`NetCore`……。如果你写了某个类的头文件并使用了 GAS 的类型，却忘了在 `Build.cs` 里加对应模块，编译会通过前面（IDE 里能找到头），**链接阶段**报“未解析的外部符号”——这是新手最常遇到的构建错误之一。
 
 ### 项目文件、目标文件与模块类型
 

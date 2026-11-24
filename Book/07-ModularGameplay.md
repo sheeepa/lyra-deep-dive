@@ -80,7 +80,7 @@ flowchart TB
 
 管理器不会去全图扫描成千上万个静态网格体、灯光和粒子。一个 Actor 想要被插件扩展，必须自己主动举手（opt-in），告诉管理器：“我是接收者”。
 
-引擎在 `ModularGameplayActors` 插件（本工程位于 `Plugins/ModularGameplayActors/`）里提供了一组打包好这项工作的基类：`AModularCharacter`、`AModularPawn`、`AModularPlayerController`、`AModularAIController`、`AModularPlayerState`、`AModularGameStateBase`。打开 `Plugins/ModularGameplayActors/Source/ModularGameplayActors/Private/ModularCharacter.cpp`，全部代码只有三个函数：
+引擎在 `ModularGameplayActors` 插件（本工程位于 `Plugins/ModularGameplayActors/`）里提供了一组打包好这项工作的基类：`AModularCharacter`、`AModularPawn`、`AModularPlayerController`、`AModularAIController`、`AModularPlayerState`、`AModularGameStateBase`。打开 [`ModularCharacter.cpp`](../../../Plugins/ModularGameplayActors/Source/ModularGameplayActors/Private/ModularCharacter.cpp)，全部代码只有三个函数：
 
 ```cpp
 // 来自 Plugins/ModularGameplayActors/.../Private/ModularCharacter.cpp 的 AModularCharacter
@@ -113,7 +113,7 @@ void AModularCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 理解接收者只需要记住两条规则：
 
 1. **按继承链向上匹配。** 当一个 `B_Hero_ShooterMannequin` 实例调用 `AddReceiver` 时，管理器会顺着它的类继承链一路往上查（`B_Hero_ShooterMannequin` → `B_Hero_Default` → `Character_Default` → `ALyraCharacter` → …，直到 `AActor` 之前）。所以 `ShooterCore` 写“给 `ALyraCharacter` 加装备组件”，所有英雄蓝图实例都会命中；写“给 `AController` 加背包组件”，人类玩家的 `ALyraPlayerController` 和 AI 的 `ALyraPlayerBotController` 都会命中。
-2. **`Modular*` 基类只是语法糖，不是硬门槛。** 如果你的类因为引擎继承关系没法继承 `Modular*`，自己把上面那三行抄进去效果完全一样。比如 `ALyraHUD` 必须继承引擎的 `AHUD`，它就在 `Source/LyraGame/UI/LyraHUD.cpp` 里原封不动写了这三行，因此照样能接收 UI 注入。
+2. **`Modular*` 基类只是语法糖，不是硬门槛。** 如果你的类因为引擎继承关系没法继承 `Modular*`，自己把上面那三行抄进去效果完全一样。比如 `ALyraHUD` 必须继承引擎的 `AHUD`，它就在 [`LyraHUD.cpp`](../../../Source/LyraGame/UI/LyraHUD.cpp) 里原封不动写了这三行，因此照样能接收 UI 注入。
 
 ---
 
@@ -315,7 +315,7 @@ sequenceDiagram
 
 Action 是资产里的子对象，整个编辑器进程共享同一份；而 `GameInstance` 和它的 `GFCM` 在多人 PIE 里有好几份！如果你在 Action 类里直接写一个成员变量 `TArray<TSharedPtr<FComponentRequestHandle>> Handles;`，客户端 1 停用清空数组时，顺手就把服务器和客户端 2 的句柄也全释放了。
 
-所以 Lyra 写了一个极薄的公共基类 `Source/LyraGame/GameFeatures/GameFeatureAction_WorldActionBase.cpp`，帮所有子类处理“遍历世界”：
+所以 Lyra 写了一个极薄的公共基类 [`UGameFeatureAction_WorldActionBase`](../../../Source/LyraGame/GameFeatures/GameFeatureAction_WorldActionBase.cpp)，帮所有子类处理“遍历世界”：
 
 ```cpp
 // 简化自 Source/LyraGame/GameFeatures/GameFeatureAction_WorldActionBase.cpp
@@ -351,7 +351,7 @@ void UGameFeatureAction_WorldActionBase::OnGameFeatureActivating(FGameFeatureAct
 
 ### 标准模板：`UGameFeatureAction_AddWidgets`
 
-打开 `Source/LyraGame/GameFeatures/GameFeatureAction_AddWidget.h` 和 `Source/LyraGame/GameFeatures/GameFeatureAction_AddWidget.cpp`。比如 `LAS_ShooterGame_StandardHUD` 就是用它把 `W_ShooterHUDLayout` 压进 `UI.Layer.Game` 层，并把准星、快捷栏、击杀播报塞进各个 `HUD.Slot.*` 槽位的。
+打开 [`GameFeatureAction_AddWidget.h`](../../../Source/LyraGame/GameFeatures/GameFeatureAction_AddWidget.h) 和 [`GameFeatureAction_AddWidget.cpp`](../../../Source/LyraGame/GameFeatures/GameFeatureAction_AddWidget.cpp)。比如 `LAS_ShooterGame_StandardHUD` 就是用它把 `W_ShooterHUDLayout` 压进 `UI.Layer.Game` 层，并把准星、快捷栏、击杀播报塞进各个 `HUD.Slot.*` 槽位的。
 
 **1. 成员变量：配置 + 按世界分账的抽屉**
 
@@ -452,7 +452,7 @@ if (ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>(HUD->GetOwningPlayerControlle
 
 ### 变奏一：`Add Abilities`——等自定义事件 `LyraAbilitiesReady` + 严格幂等
 
-打开 `Source/LyraGame/GameFeatures/GameFeatureAction_AddAbilities.cpp`。比如团队死斗 `B_ShooterGame_Elimination` 用它给 `ALyraPlayerState` 授予 `AbilitySet_Elimination`（里面装着自动复活技能 `GA_AutoRespawn` 和记分板技能 `GA_ShowLeaderboard_TDM`）。
+打开 [`GameFeatureAction_AddAbilities.cpp`](../../../Source/LyraGame/GameFeatures/GameFeatureAction_AddAbilities.cpp)。比如团队死斗 `B_ShooterGame_Elimination` 用它给 `ALyraPlayerState` 授予 `AbilitySet_Elimination`（里面装着自动复活技能 `GA_AutoRespawn` 和记分板技能 `GA_ShowLeaderboard_TDM`）。
 
 它和 `Add Widgets` 只有三处不同：
 
@@ -471,7 +471,7 @@ if (ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>(HUD->GetOwningPlayerControlle
 
 ### 变奏二：`Add Input Binding`——就绪判断权在被扩展者手里
 
-打开 `Source/LyraGame/GameFeatures/GameFeatureAction_AddInputBinding.cpp`。它监听 `APawn`，把额外的 `ULyraInputConfig` 追加给 Pawn 身上的 `ULyraHeroComponent`。
+打开 [`GameFeatureAction_AddInputBinding.cpp`](../../../Source/LyraGame/GameFeatures/GameFeatureAction_AddInputBinding.cpp)。它监听 `APawn`，把额外的 `ULyraInputConfig` 追加给 Pawn 身上的 `ULyraHeroComponent`。
 
 Pawn 什么时候才算“准备好绑定额外输入”？既不是 `PreInitializeComponents`，也不是 `BeginPlay`——下一章你会看到，客户端的 Pawn 要等 `PawnData`、`PlayerState`、`Controller`、本地 `InputComponent` 全部凑齐，走到 InitState 的 `DataInitialized` 时，`HeroComponent` 才会绑定核心输入，把内部标志 `bReadyToBindInputs` 设为 `true`，并主动广播自定义事件 **`ULyraHeroComponent::NAME_BindInputsNow`**。
 
@@ -487,7 +487,7 @@ Pawn 什么时候才算“准备好绑定额外输入”？既不是 `PreInitial
 
 现在轮到你动手扩展了。假设你要写一个自己的 Action：在激活期间，给指定类的每个就绪 Actor 执行一段挂载逻辑，并在停用或 Actor 销毁时对称清理。
 
-先注意**代码放哪个模块**：查看 `Source/LyraGame/GameFeatures/GameFeatureAction_WorldActionBase.h` 会发现，它的 `UCLASS()` 没有带 `LYRAGAME_API` 导出宏（工程里目前只有 `LyraGame` 模块内部的 Action 继承它）。因此：
+先注意**代码放哪个模块**：查看 [`GameFeatureAction_WorldActionBase.h`](../../../Source/LyraGame/GameFeatures/GameFeatureAction_WorldActionBase.h) 会发现，它的 `UCLASS()` 没有带 `LYRAGAME_API` 导出宏（工程里目前只有 `LyraGame` 模块内部的 Action 继承它）。因此：
 - 如果你的 Action 放在 `Source/LyraGame/GameFeatures/` 下，直接继承 `UGameFeatureAction_WorldActionBase` 最省事；
 - 如果你想把 Action 放在独立的 GameFeature 插件 C++ 模块里，要么给基类补上 `LYRAGAME_API`，要么直接继承引擎的 `UGameFeatureAction` 并把 `WorldActionBase` 那二十行世界遍历抄过去。
 

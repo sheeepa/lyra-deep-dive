@@ -780,7 +780,7 @@ Cast 让动画依赖具体 Pawn 类，每个状态还要在 Character 里存一�
 ## 继续深入
 
 - 函数级调用链：[参考手册 60 §8.2 外观](../Reference/60-Presentation.md)、[§8.3 通知到特效](../Reference/60-Presentation.md)、[§8.5 伤害数字](../Reference/60-Presentation.md)、[§8.6 动画与移动](../Reference/60-Presentation.md)；设计意图：[参考手册 60 §10.2~10.4](../Reference/60-Presentation.md)。
-- 本章用到的源码：`Source/LyraGame/Animation/LyraAnimInstance.cpp`、`Source/LyraGame/Cosmetics/LyraPawnComponent_CharacterParts.cpp`、`Source/LyraGame/Cosmetics/LyraControllerComponent_CharacterParts.cpp`、`Source/LyraGame/Feedback/ContextEffects/LyraContextEffectComponent.cpp`、`Source/LyraGame/Feedback/ContextEffects/LyraContextEffectsLibrary.cpp`。
+- 本章用到的源码：[`LyraAnimInstance.cpp`](../../../Source/LyraGame/Animation/LyraAnimInstance.cpp)、[`LyraPawnComponent_CharacterParts.cpp`](../../../Source/LyraGame/Cosmetics/LyraPawnComponent_CharacterParts.cpp)、[`LyraControllerComponent_CharacterParts.cpp`](../../../Source/LyraGame/Cosmetics/LyraControllerComponent_CharacterParts.cpp)、[`LyraContextEffectComponent.cpp`](../../../Source/LyraGame/Feedback/ContextEffects/LyraContextEffectComponent.cpp)、[`LyraContextEffectsLibrary.cpp`](../../../Source/LyraGame/Feedback/ContextEffects/LyraContextEffectsLibrary.cpp)。
 - 前面章节：ASC 与 Tag：[第 9 章](09-GASConcepts.md)、[第 10 章](10-LyraGAS.md)；武器装备：[第 13 章](13-Inventory.md)、[第 14 章](14-Weapons.md)；Controller 上组件怎么被加上：[第 7 章](07-ModularGameplay.md)。
 - **官方资料**：
   - [Animation in Lyra Sample Game](https://dev.epicgames.com/documentation/en-us/unreal-engine/animation-in-lyra-sample-game-in-unreal-engine)（5.1 前后）：线程安全更新、Linked Layer、`ABP_ItemAnimLayersBase`、Gameplay Tag 属性映射都在这里。注意文中资产名与 5.8 工程略有出入。

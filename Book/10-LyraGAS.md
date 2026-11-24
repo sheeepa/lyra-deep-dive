@@ -36,7 +36,7 @@
 
 ### 构造函数里发生了什么
 
-打开 `Source/LyraGame/Player/LyraPlayerState.cpp`，构造函数里藏着整个 GAS 架构里最重要的一个决定：
+打开 [`LyraPlayerState.cpp`](../../../Source/LyraGame/Player/LyraPlayerState.cpp)，构造函数里藏着整个 GAS 架构里最重要的一个决定：
 
 ```cpp
 // 简化自 Source/LyraGame/Player/LyraPlayerState.cpp 的 ALyraPlayerState::ALyraPlayerState
@@ -70,7 +70,7 @@ SetNetUpdateFrequency(100.0f);
 
 - **`ALyraPlayerState`**：玩家的 ASC，Owner = PlayerState，Avatar = 当前 Pawn。
 - **`ALyraGameState`**：GameState 上也有一个 ASC，同样是 Mixed。它在 `PostInitializeComponents` 里用 `InitAbilityActorInfo(this, this)`，Owner 和 Avatar 都是 GameState 自己。它不属于任何玩家，用来跑“游戏阶段（Game Phase）”这类全局技能（热身、比赛中、赛后……）。因为它的 Avatar 不是 Pawn，所以不会被登记进本章后面讲的全局技能系统。
-- **`ALyraCharacterWithAbilities`**：`Source/LyraGame/Character/LyraCharacterWithAbilities.cpp` 这个类的构造函数与 PlayerState 里几乎一样，但 ASC 直接放在 Character 上，`PostInitializeComponents` 里 `InitAbilityActorInfo(this, this)`。这就是上一章里“最简单做法”，适合**没有 PlayerState 的东西**。在项目里它被 `B_ShootingTarget`（`Content/Weapons/Tests/` 下的射击靶子）使用，靶子被打、被治疗时需要 HealthSet，但它不是玩家，没必要再造一个 PlayerState。
+- **`ALyraCharacterWithAbilities`**：[`LyraCharacterWithAbilities.cpp`](../../../Source/LyraGame/Character/LyraCharacterWithAbilities.cpp) 这个类的构造函数与 PlayerState 里几乎一样，但 ASC 直接放在 Character 上，`PostInitializeComponents` 里 `InitAbilityActorInfo(this, this)`。这就是上一章里“最简单做法”，适合**没有 PlayerState 的东西**。在项目里它被 `B_ShootingTarget`（`Content/Weapons/Tests/` 下的射击靶子）使用，靶子被打、被治疗时需要 HealthSet，但它不是玩家，没必要再造一个 PlayerState。
 
 三处的 Owner 与 Avatar 关系放在一起看，差别一目了然：
 
@@ -126,7 +126,7 @@ if (CurrentState == LyraGameplayTags::InitState_DataAvailable && DesiredState ==
 
 ### InitializeAbilitySystem 做了什么
 
-真正干活的是 `Source/LyraGame/Character/LyraPawnExtensionComponent.cpp`：
+真正干活的是 [`LyraPawnExtensionComponent.cpp`](../../../Source/LyraGame/Character/LyraPawnExtensionComponent.cpp)：
 
 ```cpp
 // 简化自 Source/LyraGame/Character/LyraPawnExtensionComponent.cpp 的 ULyraPawnExtensionComponent::InitializeAbilitySystem
@@ -236,7 +236,7 @@ sequenceDiagram
 
 ### Lyra 的做法：`ULyraAbilitySet`
 
-`Source/LyraGame/AbilitySystem/LyraAbilitySet.h` 定义了一个只读的数据资产（`UPrimaryDataAsset`，标 `Const`），里面是三张列表：
+[`LyraAbilitySet.h`](../../../Source/LyraGame/AbilitySystem/LyraAbilitySet.h) 定义了一个只读的数据资产（`UPrimaryDataAsset`，标 `Const`），里面是三张列表：
 
 ```cpp
 // 简化自 Source/LyraGame/AbilitySystem/LyraAbilitySet.h
@@ -372,7 +372,7 @@ for (const TObjectPtr<const ULyraAbilitySet>& AbilitySet : EquipmentCDO->Ability
 
 ## 五、激活策略与激活组：何时激活、谁能打断谁
 
-所有 Lyra 技能（包括蓝图技能）都继承 `Source/LyraGame/AbilitySystem/Abilities/LyraGameplayAbility.h` 里的 `ULyraGameplayAbility`（它继承引擎的 `UGameplayAbility`，是 `Abstract` 的）。它的构造函数先定下默认值：
+所有 Lyra 技能（包括蓝图技能）都继承 [`LyraGameplayAbility.h`](../../../Source/LyraGame/AbilitySystem/Abilities/LyraGameplayAbility.h) 里的 `ULyraGameplayAbility`（它继承引擎的 `UGameplayAbility`，是 `Abstract` 的）。它的构造函数先定下默认值：
 
 ```cpp
 // 简化自 Source/LyraGame/AbilitySystem/Abilities/LyraGameplayAbility.cpp 的 ULyraGameplayAbility::ULyraGameplayAbility
@@ -472,7 +472,7 @@ UPROPERTY(EditDefaultsOnly, Instanced, Category = Costs)
 TArray<TObjectPtr<ULyraAbilityCost>> AdditionalCosts;   // Instanced：数组里的每个元素在资产里直接内联编辑
 ```
 
-`ULyraAbilityCost`（`Source/LyraGame/AbilitySystem/Abilities/LyraAbilityCost.h`）是抽象基类，只有两个虚函数 `CheckCost`（够不够付）和 `ApplyCost`（付账），加一个开关 `bOnlyApplyCostOnHit`（命中才扣）。`ULyraGameplayAbility` 重写引擎的 `CheckCost`/`ApplyCost`，先走引擎的 GE 消耗，再逐个走 `AdditionalCosts`：
+`ULyraAbilityCost`（[`LyraAbilityCost.h`](../../../Source/LyraGame/AbilitySystem/Abilities/LyraAbilityCost.h)）是抽象基类，只有两个虚函数 `CheckCost`（够不够付）和 `ApplyCost`（付账），加一个开关 `bOnlyApplyCostOnHit`（命中才扣）。`ULyraGameplayAbility` 重写引擎的 `CheckCost`/`ApplyCost`，先走引擎的 GE 消耗，再逐个走 `AdditionalCosts`：
 
 ```cpp
 // 简化自 ULyraGameplayAbility::CheckCost
@@ -494,7 +494,7 @@ return true;
 
 ### 失败原因与反馈
 
-技能激活失败时，`CanActivateAbility` 会往 `OptionalRelevantTags` 里加失败原因 Tag：`Ability.ActivateFail.Cooldown / Cost / TagsBlocked / TagsMissing / Networking / ActivationGroup / IsDead`。这些 Tag 的原生定义在 `Source/LyraGame/LyraGameplayTags.cpp`。
+技能激活失败时，`CanActivateAbility` 会往 `OptionalRelevantTags` 里加失败原因 Tag：`Ability.ActivateFail.Cooldown / Cost / TagsBlocked / TagsMissing / Networking / ActivationGroup / IsDead`。这些 Tag 的原生定义在 [`LyraGameplayTags.cpp`](../../../Source/LyraGame/LyraGameplayTags.cpp)。
 
 怎么把它们变成玩家能感知的反馈？
 
@@ -536,7 +536,7 @@ HeroComponent->SetAbilityCameraMode(CameraMode, CurrentSpecHandle);   // 记录�
 
 Epic 的《Abilities in Lyra》文档把这一块叫“Expanded Tag Relationship System”（扩展的 Tag 关系系统），意思就是在引擎自带的 Block/Cancel 之上再叠一层集中式规则。（该页面的这一节，本书写作时只能读到摘要，细节以下面的源码为准。）
 
-`Source/LyraGame/AbilitySystem/LyraAbilityTagRelationshipMapping.h` 定义了一张只有一个数组的数据资产：
+[`LyraAbilityTagRelationshipMapping.h`](../../../Source/LyraGame/AbilitySystem/LyraAbilityTagRelationshipMapping.h) 定义了一张只有一个数组的数据资产：
 
 ```cpp
 // 简化自 Source/LyraGame/AbilitySystem/LyraAbilityTagRelationshipMapping.h
@@ -604,7 +604,7 @@ flowchart TD
 
 这张真实配置表把它的威力展现得淋漓尽致：因为匹配用的是 `HasTag`（层级匹配），给**父类别** `Ability.Type.Action` 配一行“死亡时不可激活”，就一次性管住了它下面所有的动作子类——“死着开枪”靠一行数据彻底杜绝；冲刺配一行取消并阻止 `Ability.Type.Action`，所有动作遇到冲刺自动让路。
 
-编辑这张表时还有一个小坑：`Source/LyraGame/AbilitySystem/LyraAbilityTagRelationshipMapping.h` 里 `AbilityTag` 字段的元数据是 `Categories = "Gameplay.Action"`。`Categories` 只影响编辑器的 Tag 下拉框；而数据里实际使用的是 `Ability.Type.Action.*`（定义在 `Config/DefaultGameplayTags.ini`，在 `Source/`、`Config/`、`Plugins/` 里检索不到任何 `Gameplay.Action` 的定义）。结果是这个字段的下拉里选不到 `Ability.Type.Action.Dash` 这样的 Tag，只能手输或粘贴。它只是元数据不一致，不影响运行时——匹配走的是 `FGameplayTagContainer::HasTag`——但新手第一次填表时容易怀疑“是不是我的 Tag 没注册”。
+编辑这张表时还有一个小坑：[`LyraAbilityTagRelationshipMapping.h`](../../../Source/LyraGame/AbilitySystem/LyraAbilityTagRelationshipMapping.h) 里 `AbilityTag` 字段的元数据是 `Categories = "Gameplay.Action"`。`Categories` 只影响编辑器的 Tag 下拉框；而数据里实际使用的是 `Ability.Type.Action.*`（定义在 `Config/DefaultGameplayTags.ini`，在 `Source/`、`Config/`、`Plugins/` 里检索不到任何 `Gameplay.Action` 的定义）。结果是这个字段的下拉里选不到 `Ability.Type.Action.Dash` 这样的 Tag，只能手输或粘贴。它只是元数据不一致，不影响运行时——匹配走的是 `FGameplayTagContainer::HasTag`——但新手第一次填表时容易怀疑“是不是我的 Tag 没注册”。
 
 ## 八、全局技能与全局效果
 
@@ -614,7 +614,7 @@ flowchart TD
 
 ### `ULyraGlobalAbilitySystem`
 
-`Source/LyraGame/AbilitySystem/LyraGlobalAbilitySystem.cpp` 是一个世界子系统（Subsystem，第 2 章）。它维护两件东西：已经登记的所有 ASC，以及“对所有人生效”的技能/效果清单。
+[`LyraGlobalAbilitySystem.cpp`](../../../Source/LyraGame/AbilitySystem/LyraGlobalAbilitySystem.cpp) 是一个世界子系统（Subsystem，第 2 章）。它维护两件东西：已经登记的所有 ASC，以及“对所有人生效”的技能/效果清单。
 
 ```cpp
 // 简化自 Source/LyraGame/AbilitySystem/LyraGlobalAbilitySystem.cpp
@@ -662,7 +662,7 @@ protected:
 };
 ```
 
-怎么让 GAS 创建这个子类而不是引擎默认的？靠 `UAbilitySystemGlobals` 的子类 `Source/LyraGame/AbilitySystem/LyraAbilitySystemGlobals.cpp`，它重写 `AllocGameplayEffectContext` 返回 `new FLyraGameplayEffectContext()`，然后在 `Config/DefaultGame.ini` 里通过 `AbilitySystemGlobalsClassName=/Script/LyraGame.LyraAbilitySystemGlobals` 指定使用。**所以项目里所有 Context 都是这个子类**，计算里用 `FLyraGameplayEffectContext::ExtractEffectContext(Handle)` 把句柄转成子类指针。
+怎么让 GAS 创建这个子类而不是引擎默认的？靠 `UAbilitySystemGlobals` 的子类 [`LyraAbilitySystemGlobals.cpp`](../../../Source/LyraGame/AbilitySystem/LyraAbilitySystemGlobals.cpp)，它重写 `AllocGameplayEffectContext` 返回 `new FLyraGameplayEffectContext()`，然后在 `Config/DefaultGame.ini` 里通过 `AbilitySystemGlobalsClassName=/Script/LyraGame.LyraAbilitySystemGlobals` 指定使用。**所以项目里所有 Context 都是这个子类**，计算里用 `FLyraGameplayEffectContext::ExtractEffectContext(Handle)` 把句柄转成子类指针。
 
 字段的填充点有两处：`ULyraGameplayAbility::MakeEffectContext`（填 `AbilitySource`、`AddInstigator(OwnerActor, EffectCauser)`、`AddSourceObject`）和 `FLyraGameplayAbilityTargetData_SingleTargetHit::AddTargetDataToContext`（把 `CartridgeID` 写进去）。注意 Instigator 是 **Owner（PlayerState）**，EffectCauser 是 **Avatar（Pawn）**——这和 Owner/Avatar 的分工是一致的。
 
@@ -687,7 +687,7 @@ bool FLyraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 
 ## 十、GameplayCue 的加载策略
 
-Cue 是资产（通知蓝图），需要加载。如果游戏里有几千个 Cue，启动时全部加载太慢，运行时按需加载又可能让第一次触发错过表现。`ULyraGameplayCueManager`（`Source/LyraGame/AbilitySystem/LyraGameplayCueManager.cpp`，通过 ini 里的 `GlobalGameplayCueManagerClass` 指定）把这个策略做成一个枚举，默认值写死在文件里：
+Cue 是资产（通知蓝图），需要加载。如果游戏里有几千个 Cue，启动时全部加载太慢，运行时按需加载又可能让第一次触发错过表现。`ULyraGameplayCueManager`（[`LyraGameplayCueManager.cpp`](../../../Source/LyraGame/AbilitySystem/LyraGameplayCueManager.cpp)，通过 ini 里的 `GlobalGameplayCueManagerClass` 指定）把这个策略做成一个枚举，默认值写死在文件里：
 
 ```cpp
 // 简化自 Source/LyraGame/AbilitySystem/LyraGameplayCueManager.cpp

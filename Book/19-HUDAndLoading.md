@@ -40,7 +40,7 @@ Lyra 的做法是：**HUD 布局只声明“这里有一个空位”，空位由
 
 ### 三个角色
 
-UIExtension 插件（`Plugins/UIExtension`）里只有两个文件夹值得看：`Plugins/UIExtension/Source/Private/UIExtensionSystem.cpp` 和 `Plugins/UIExtension/Source/Private/Widgets/UIExtensionPointWidget.cpp`。它的概念模型是三个角色：
+UIExtension 插件（`Plugins/UIExtension`）里只有两个文件夹值得看：[`UIExtensionSystem.cpp`](../../../Plugins/UIExtension/Source/Private/UIExtensionSystem.cpp) 和 [`UIExtensionPointWidget.cpp`](../../../Plugins/UIExtension/Source/Private/Widgets/UIExtensionPointWidget.cpp)。它的概念模型是三个角色：
 
 - **扩展点（Extension Point）**：一个槽位。登记时带着一个 Tag、一个匹配模式、一个“能接受哪些数据类”的列表，以及一个回调；
 - **扩展（Extension）**：一条要放进槽位的内容。登记时带着目标 Tag、要放的数据（最常见的是“一个控件类”）、优先级，以及可选的上下文对象；
@@ -236,7 +236,7 @@ if ((GameInstance != nullptr) && (World != nullptr) && World->IsGameWorld())
 
 `AddToWorld` 来自基类 `UGameFeatureAction_WorldActionBase`：它在 Action 激活时对每个已经存在的游戏世界上下文调用 `AddToWorld`，并订阅 `FWorldDelegates::OnStartGameInstance`，对之后才启动的游戏实例也调用——这是 PIE 里每个客户端各自一个 World 能各干各的事的保证。
 
-另一半在 HUD 这边。`Source/LyraGame/UI/LyraHUD.cpp` 的 UI 逻辑几乎为零，它的关键就是两个生命周期函数：
+另一半在 HUD 这边。[`ALyraHUD`](../../../Source/LyraGame/UI/LyraHUD.cpp) 的 UI 逻辑几乎为零，它的关键就是两个生命周期函数：
 
 ```cpp
 // 简化自 Source/LyraGame/UI/LyraHUD.cpp
@@ -383,7 +383,7 @@ sequenceDiagram
 
 Designer 里每个槽位都是一个以 `ExtensionPoint_` 开头的 `UIExtensionPointWidget`（`ExtensionPoint_Equipment`、`_Reticle`、`_ModeStatus`、`_TeamScore`、`_TextStats`、`_GraphStats`、`_LeftSide`、`_RightSide` 等），底层还铺着一张 `IndicatorLayer` 作为下一节指示器的画布。
 
-留意两件事。一是 `HUD.Slot.TeamScore` 与 `HUD.Slot.ModeStatus` **不在** `StandardHUD` 里——团队死斗 `B_ShooterGame_Elimination` 自己的 `Actions` 往 `TeamScore` 里放 `W_ScoreWidget_Elimination`，占点 `B_LyraShooterGame_ControlPoints` 则同时往 `TeamScore` 放 `W_CPScoreWidget`、往 `ModeStatus` 放 `W_ControlPointStatusWidget`。这就是本章开头问题的答案：布局共用，槽位里的内容按 Experience 不同而不同。二是这些 `HUD.Slot.*` Tag 的定义位置：有一部分在项目的 `Config/DefaultGameplayTags.ini`（如 `HUD.Slot.ExtraEquipment`、`LeftSideTouchInputs`、`RespawnTimer`），而 `EliminationFeed`、`Equipment`、`ModeStatus`、`Reticle`、`TeamScore`、`TopAccolades`、`PerfStats.*` 这些定义在 `ShooterCore` 插件自己的 `Config/Tags/ShooterCoreTags.ini` 里。插件自带自己的 Tag 表，随插件启用才注册，这又是 GameFeature “自包含”的一个例子。
+留意两件事。一是 `HUD.Slot.TeamScore` 与 `HUD.Slot.ModeStatus` **不在** `StandardHUD` 里——团队死斗 `B_ShooterGame_Elimination` 自己的 `Actions` 往 `TeamScore` 里放 `W_ScoreWidget_Elimination`，占点 `B_LyraShooterGame_ControlPoints` 则同时往 `TeamScore` 放 `W_CPScoreWidget`、往 `ModeStatus` 放 `W_ControlPointStatusWidget`。这就是本章开头问题的答案：布局共用，槽位里的内容按 Experience 不同而不同。二是这些 `HUD.Slot.*` Tag 的定义位置：有一部分在项目的 [`Config/DefaultGameplayTags.ini`](../../../Config/DefaultGameplayTags.ini)（如 `HUD.Slot.ExtraEquipment`、`LeftSideTouchInputs`、`RespawnTimer`），而 `EliminationFeed`、`Equipment`、`ModeStatus`、`Reticle`、`TeamScore`、`TopAccolades`、`PerfStats.*` 这些定义在 `ShooterCore` 插件自己的 `Config/Tags/ShooterCoreTags.ini` 里。插件自带自己的 Tag 表，随插件启用才注册，这又是 GameFeature “自包含”的一个例子。
 
 ## 第四部分：指示器系统——世界里的标记，屏幕上的控件
 
@@ -395,7 +395,7 @@ Designer 里每个槽位都是一个以 `ExtensionPoint_` 开头的 `UIExtension
 
 ### Lyra 的做法：四个部件
 
-指示器系统在 `Source/LyraGame/UI/IndicatorSystem`，由四个部件组成：
+指示器系统在 [`Source/LyraGame/UI/IndicatorSystem`](../../../Source/LyraGame/UI/IndicatorSystem/)，由四个部件组成：
 
 - `UIndicatorDescriptor`：纯数据，描述“一个指示器”——它跟着哪个场景组件（可选骨骼插槽）、用哪个控件类（软引用）、怎么投影、对齐方式、是否贴边、偏移、优先级；
 - `ULyraIndicatorManagerComponent`：**挂在 Controller 上**的组件，持有一个指示器列表，提供 `AddIndicator` / `RemoveIndicator`，并广播 `OnIndicatorAdded` / `OnIndicatorRemoved`；
@@ -505,7 +505,7 @@ Lyra 用的 `CommonLoadingScreen` 插件反过来：**加载屏管理器每帧�
 
 ### 管理器：每帧判断
 
-`ULoadingScreenManager`（`Plugins/CommonLoadingScreen/Source/CommonLoadingScreen/Private/LoadingScreenManager.cpp`）是一个 GameInstance 子系统，同时实现 `FTickableGameObject` 每帧调用。几个事实：
+`ULoadingScreenManager`（[`LoadingScreenManager.cpp`](../../../Plugins/CommonLoadingScreen/Source/CommonLoadingScreen/Private/LoadingScreenManager.cpp)）是一个 GameInstance 子系统，同时实现 `FTickableGameObject` 每帧调用。几个事实：
 
 - `ShouldCreateSubsystem` 在专用服务器上返回 false——只有客户端有加载屏；
 - `IsTickable` 要求有游戏视口客户端；
@@ -607,7 +607,7 @@ return bNeedToShowLoadingScreen || bWantToForceShowLoadingScreen;
 
 ## 第六部分：性能统计 HUD（简述）
 
-HUD 里的帧率、延迟图是 `Add Widgets` 动作的又一个典型用法。局内 `StandardHUD` 把 `W_PerfStatContainer_TextOnly` 与 `_GraphOnly` 分别注册到 `HUD.Slot.PerfStats.Text` 与 `.Graph`，前端 `B_LyraFrontEnd_Experience` 的 `Add Widgets` 动作则往 `HUD.Slot.PerfStats.Text` 注册了前端专用的 `W_PerfStatContainer_FrontEnd`。C++ 部分在 `Source/LyraGame/UI/PerformanceStats`：
+HUD 里的帧率、延迟图是 `Add Widgets` 动作的又一个典型用法。局内 `StandardHUD` 把 `W_PerfStatContainer_TextOnly` 与 `_GraphOnly` 分别注册到 `HUD.Slot.PerfStats.Text` 与 `.Graph`，前端 `B_LyraFrontEnd_Experience` 的 `Add Widgets` 动作则往 `HUD.Slot.PerfStats.Text` 注册了前端专用的 `W_PerfStatContainer_FrontEnd`。C++ 部分在 [`UI/PerformanceStats`](../../../Source/LyraGame/UI/PerformanceStats/)：
 
 `ULyraPerfStatWidgetBase` 是显示单个统计项的基类，`StatToDisplay` 指定显示哪一项（`ELyraDisplayablePerformanceStat`，如 ClientFPS、Ping、FrameTime_GameThread 等），`FetchStatValue` 从 `ULyraPerformanceStatSubsystem` 拉取缓存的数值；`ULyraPerfStatGraph` 画折线图；`ULyraPerfStatContainerBase` 是容器，在 `NativeConstruct` 里订阅 `ULyraSettingsLocal::OnPerfStatDisplayStateChanged`，并根据玩家在设置里为每项统计选的显示方式（隐藏 / 仅文字 / 仅图表 / 文字加图表）以及容器自己的过滤条件，决定哪些子控件可见。所以玩家在设置界面（第 20 章）里勾选“显示 FPS”，就能直接让这个 HUD 元素出现，不需要任何 Experience 的参与——Experience 负责“槽位里有这个容器”，玩家设置负责“容器里显示哪些”。
 

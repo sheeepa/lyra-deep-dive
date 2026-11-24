@@ -37,7 +37,7 @@
 
 **输入映射上下文（Input Mapping Context，IMC）**：一个资产，说“当这个上下文生效时，哪些键触发哪些 IA”。比如 `IMC_Default` 里 W/A/S/D 和左摇杆都映射到 `IA_Move`，空格映射到 `IA_Jump`。**IMC 是在运行时被“加”到某个玩家身上的**：每个本地玩家有一个 `UEnhancedInputLocalPlayerSubsystem`（子系统，第 2 章），调用 `AddMappingContext(IMC, Priority)` 就生效，`RemoveMappingContext` 就撤销。多个 IMC 可以同时生效，优先级高的先处理；同一个键如果被高优先级的 IMC 里的 IA“消耗”了，低优先级的就收不到。这解决了“不同玩法不同键位”：玩法 A 加一个 IMC，玩法 B 加另一个。Epic 官方《Enhanced Input》文档举的例子很贴切：玩家打开背包时，临时加一个优先级更高的“选择物品”上下文，原来的“移动/开火”上下文还在，只是同一个键被高优先级的先拿走了；关掉背包再移除它。
 
-**修饰器（Modifier）**：在值到达 IA 之前对它做数学处理。WASD 如何变成一个二维移动向量？在 IMC 里，W 映射到 `IA_Move`，加一个“调换轴（Swizzle）”修饰器把 X 轴的值换到 Y 轴；S 再加一个“取反（Negate）”；A 取反；D 什么也不加。死区（Dead Zone）、灵敏度缩放、反转 Y 轴也是修饰器。Lyra 自己写了几个读取玩家设置的修饰器（`ULyraSettingBasedScalar`、`ULyraInputModifierDeadZone` 等，在 `Source/LyraGame/Input/LyraInputModifiers.h`），让鼠标灵敏度可以在设置界面里调。
+**修饰器（Modifier）**：在值到达 IA 之前对它做数学处理。WASD 如何变成一个二维移动向量？在 IMC 里，W 映射到 `IA_Move`，加一个“调换轴（Swizzle）”修饰器把 X 轴的值换到 Y 轴；S 再加一个“取反（Negate）”；A 取反；D 什么也不加。死区（Dead Zone）、灵敏度缩放、反转 Y 轴也是修饰器。Lyra 自己写了几个读取玩家设置的修饰器（`ULyraSettingBasedScalar`、`ULyraInputModifierDeadZone` 等，在 [`LyraInputModifiers.h`](../../../Source/LyraGame/Input/LyraInputModifiers.h)），让鼠标灵敏度可以在设置界面里调。
 
 **触发器（Trigger）**：决定“值满足什么条件才算 IA 被触发”。常见的有：Down（按着就一直触发）、Pressed（只在按下的那一帧触发）、Released（松开那一帧）、Hold（按住满一段时间才触发）、Tap（快速点按才触发）、Pulse（按住期间周期性触发）、Chorded（需要另一个动作同时按着）。没有配触发器的 IA，默认表现得像 Down。
 
@@ -114,7 +114,7 @@ void AMyCharacter::Move(const FInputActionValue& Value)
 
 ## 二、`ULyraInputConfig`：IA 与 InputTag 的配对表
 
-`Source/LyraGame/Input/LyraInputConfig.h` 很短：
+[`LyraInputConfig.h`](../../../Source/LyraGame/Input/LyraInputConfig.h) 很短：
 
 ```cpp
 // 简化自 Source/LyraGame/Input/LyraInputConfig.h
@@ -143,7 +143,7 @@ class ULyraInputConfig : public UDataAsset
 
 还有一份是 ShooterCore 插件里的 `InputData_ShooterGame_AddOns`，里面是只属于射击玩法的额外按键：表情、近战、丢枪、记分板、ADS（瞄准）、手雷。它是怎么被加进来的，见第七节。（顺带一提，数字键 1/2/3 与滚轮切枪并不在这两份 `InputConfig` 里，而是 `B_Hero_ShooterMannequin` 蓝图直接监听 `IA_QuickSlot*` 后发 GameplayEvent 驱动 `GA_QuickbarSlots` 的。）
 
-InputTag 的定义有两类：移动这几个原生输入 Tag 在 C++ 里定义（`Source/LyraGame/LyraGameplayTags.cpp` 的 `InputTag_Move`、`InputTag_Look_Mouse`、`InputTag_Look_Stick`、`InputTag_Crouch`、`InputTag_AutoRun`）；技能用的 Tag 写在 ini 里——通用的（`InputTag.Jump`、`InputTag.Weapon.Fire`、`InputTag.Ability.Dash` 等）在 `Config/DefaultGameplayTags.ini`，射击玩法专属的（`InputTag.Ability.Emote`、`InputTag.Ability.Interact` 等）在 ShooterCore 插件自己的 `Config/Tags/ShooterCoreTags.ini`。**C++ 要引用的 Tag 用原生定义，只给内容用的 Tag 写 ini 就够了。**
+InputTag 的定义有两类：移动这几个原生输入 Tag 在 C++ 里定义（[`LyraGameplayTags.cpp`](../../../Source/LyraGame/LyraGameplayTags.cpp) 的 `InputTag_Move`、`InputTag_Look_Mouse`、`InputTag_Look_Stick`、`InputTag_Crouch`、`InputTag_AutoRun`）；技能用的 Tag 写在 ini 里——通用的（`InputTag.Jump`、`InputTag.Weapon.Fire`、`InputTag.Ability.Dash` 等）在 `Config/DefaultGameplayTags.ini`，射击玩法专属的（`InputTag.Ability.Emote`、`InputTag.Ability.Interact` 等）在 ShooterCore 插件自己的 `Config/Tags/ShooterCoreTags.ini`。**C++ 要引用的 Tag 用原生定义，只给内容用的 Tag 写 ini 就够了。**
 
 ## 三、`ULyraInputComponent`：把“绑定”写成两个模板函数
 
@@ -216,19 +216,13 @@ if (const ULyraInputConfig* InputConfig = PawnData->InputConfig)  // PawnData �
             }
         }
     }
-
     ULyraInputComponent* LyraIC = Cast<ULyraInputComponent>(PlayerInputComponent);
     LyraIC->AddInputMappings(InputConfig, Subsystem);             // 空钩子，留给你加自定义逻辑
-
     TArray<uint32> BindHandles;                                   // ③ 自动绑定：所有 AbilityInputActions
     LyraIC->BindAbilityActions(InputConfig, this, &ThisClass::Input_AbilityInputTagPressed, &ThisClass::Input_AbilityInputTagReleased, /*out*/ BindHandles);
-
-    LyraIC->BindNativeAction(InputConfig, LyraGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &ThisClass::Input_Move, false);   // ④ 手动绑定
-    // ……Look_Mouse / Look_Stick / Crouch / AutoRun 同理
+    LyraIC->BindNativeAction(InputConfig, LyraGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &ThisClass::Input_Move, false); // ④ 手动绑定（Look/Crouch 等同理）
 }
-
-bReadyToBindInputs = true;
-// ⑤ 发出“可以绑定输入了”的信号，让 GameFeature 追加它们的输入
+bReadyToBindInputs = true;                                       // ⑤ 发出信号，让 GameFeature 追加它们的输入
 UGameFrameworkComponentManager::SendGameFrameworkComponentExtensionEvent(PC,   NAME_BindInputsNow);
 UGameFrameworkComponentManager::SendGameFrameworkComponentExtensionEvent(Pawn, NAME_BindInputsNow);
 ```
