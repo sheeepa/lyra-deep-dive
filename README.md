@@ -1,7 +1,7 @@
 # Lyra Starter Game（UE 5.8）中文文档总览与参考手册
 
 > 一套针对 UE 5.8 `LyraStarterGame` 的中文技术文档，**不包含** Lyra 工程本体，也不含 Epic 的任何原始源码文件与二进制资产。
-> 除引用的 Epic 官方代码片段外，本仓库原创内容统一采用 **[CC BY-NC-SA 4.0](LICENSE)** 授权，详见文末声明。
+> 除引用的 Epic 官方代码片段外，本仓库原创内容统一采用 **[CC BY-SA 4.0](LICENSE)** 授权，详见文末声明。
 
 本仓库汇集了针对 UE 5.8 `LyraStarterGame` 编写并经源码与编辑器实测核验的技术文档。请按你当前的场景选择入口：
 
@@ -65,6 +65,6 @@
 
 ## 版权与许可
 
-除下方明确排除的第三方引用内容外，本仓库全部原创内容均采用 **[CC BY-NC-SA 4.0](LICENSE)**（[署名-非商业性使用-相同方式共享 4.0 国际许可协议](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans)）授权：你可以自由阅读、复制、改写、翻译和非商业分发，条件是保留署名、注明出处、不得用于商业目的，且衍生作品使用相同协议。
+除下方明确排除的第三方引用内容外，本仓库全部原创内容均采用 **[CC BY-SA 4.0](LICENSE)**（[署名-相同方式共享 4.0 国际许可协议](https://creativecommons.org/licenses/by-sa/4.0/deed.zh-hans)）授权：你可以自由阅读、复制、改写、翻译和分发，条件是保留署名、注明出处并说明修改，且衍生作品使用相同协议。
 
-**第三方权利排除声明（Except where otherwise noted）**：文中出于教学评述与技术讨论目的简短引用的 Unreal Engine 及 Lyra Starter Game 官方源码片段（单段均不超过 30 行，符合 UE EULA 第 5.a.ii 条规定）、`.ini` 配置项与官方资产名称，著作权归 **Epic Games, Inc.** 所有，**明确排除在本仓库 `CC BY-NC-SA 4.0` 授权范围之外**，其使用受 [Unreal Engine EULA](https://www.unrealengine.com/eula) 约束。Unreal® 与 Unreal Engine® 是 Epic Games, Inc. 的商标，本项目仅作技术教学用途，与 Epic Games 无隶属关系。
+**第三方权利排除声明（Except where otherwise noted）**：文中出于教学评述与技术讨论目的简短引用的 Unreal Engine 及 Lyra Starter Game 官方源码片段（单段均不超过 30 行，符合 UE EULA 第 5.a.ii 条规定）、`.ini` 配置项与官方资产名称，著作权归 **Epic Games, Inc.** 所有，**明确排除在本仓库 `CC BY-SA 4.0` 授权范围之外**，其使用受 [Unreal Engine EULA](https://www.unrealengine.com/eula) 约束。Unreal® 与 Unreal Engine® 是 Epic Games, Inc. 的商标，本项目仅作技术教学用途，与 Epic Games 无隶属关系。

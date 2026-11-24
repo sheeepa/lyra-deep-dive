@@ -68,4 +68,4 @@
 
 ## 版权与许可
 
-除文中为教学评述简短引用的 Unreal Engine 及 Lyra 官方代码片段（版权归 **Epic Games, Inc.** 所有，排除在开源许可之外并受 Unreal Engine EULA 约束）外，本书全部原创内容采用 **[CC BY-NC-SA 4.0](../LICENSE)** 授权，详见仓库首页与 [`LICENSE`](../LICENSE)。
+除文中为教学评述简短引用的 Unreal Engine 及 Lyra 官方代码片段（版权归 **Epic Games, Inc.** 所有，排除在开源许可之外并受 Unreal Engine EULA 约束）外，本书全部原创内容采用 **[CC BY-SA 4.0](../LICENSE)** 授权，详见仓库首页与 [`LICENSE`](../LICENSE)。
